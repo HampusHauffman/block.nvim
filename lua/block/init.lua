@@ -21,7 +21,7 @@ local ns_id        = vim.api.nvim_create_namespace('bloc')
 local colors       = {}
 
 local color        = require("color")
-local normal_color = api.nvim_get_hl_id_by_name("Normal")
+local normal_color = api.nvim_get_hl(0, { name = "Normal" })
 print(normal_color)
 
 vim.cmd('highlight Bloc0 guibg=#2f303d')
