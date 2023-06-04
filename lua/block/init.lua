@@ -182,6 +182,4 @@ function M.toggle()
     end
 end
 
-local config = require("conf")
-M.setup = config.setup
 return M
