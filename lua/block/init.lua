@@ -1,6 +1,6 @@
 local M = {}
 
-function darken_hex_color(hex_color)
+local function darken_hex_color(hex_color)
     -- Remove the '#' symbol if present
     hex_color = hex_color:gsub("#", "")
 
@@ -10,7 +10,7 @@ function darken_hex_color(hex_color)
     local b = tonumber(hex_color:sub(5, 6), 16)
 
     -- Darken the color by 2%
-    local darken_amount = 0.98
+    local darken_amount = 0.80
     r = math.floor(r * darken_amount)
     g = math.floor(g * darken_amount)
     b = math.floor(b * darken_amount)
@@ -43,13 +43,14 @@ local colors       = {}
 
 local normal_color = api.nvim_get_hl(0, { name = "Normal" })
 local bg           = normal_color.bg
-local fg           = normal_color.fg
-local bg1          = darken_hex_color(bg)
-local bg2          = darken_hex_color(bg1)
-local bg3          = darken_hex_color(bg2)
-vim.cmd('highlight Bloc0 guibg='..bg1)
-vim.cmd('highlight Bloc1 guibg='..bg2)
-vim.cmd('highlight Bloc2 guibg='..bg3)
+local hex_color    = string.format("#%06X", bg)
+
+print(hex_color)
+local bg1 = darken_hex_color(hex_color)
+local bg2 = darken_hex_color(bg1)
+vim.cmd('highlight Bloc0 guibg=' .. hex_color)
+vim.cmd('highlight Bloc1 guibg=' .. bg1)
+vim.cmd('highlight Bloc2 guibg=' .. bg2)
 
 ---@param lines string[]
 local function find_biggest_end_col(lines)
