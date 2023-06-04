@@ -1,4 +1,25 @@
-local M            = {}
+local M = {}
+
+function darken_hex_color(hex_color)
+    -- Remove the '#' symbol if present
+    hex_color = hex_color:gsub("#", "")
+
+    -- Convert the hexadecimal color to RGB
+    local r = tonumber(hex_color:sub(1, 2), 16)
+    local g = tonumber(hex_color:sub(3, 4), 16)
+    local b = tonumber(hex_color:sub(5, 6), 16)
+
+    -- Darken the color by 2%
+    local darken_amount = 0.98
+    r = math.floor(r * darken_amount)
+    g = math.floor(g * darken_amount)
+    b = math.floor(b * darken_amount)
+
+    -- Convert the darkened RGB values back to hexadecimal
+    local darkened_hex_color = string.format("#%02X%02X%02X", r, g, b)
+
+    return darkened_hex_color
+end
 
 ---@class MTSNode
 ---@field children MTSNode[]
@@ -20,13 +41,15 @@ local ts           = vim.treesitter
 local ns_id        = vim.api.nvim_create_namespace('bloc')
 local colors       = {}
 
-local color        = require("color")
 local normal_color = api.nvim_get_hl(0, { name = "Normal" })
-print(normal_color)
-
-vim.cmd('highlight Bloc0 guibg=#2f303d')
-vim.cmd('highlight Bloc1 guibg=#2b2c38')
-vim.cmd('highlight Bloc2 guibg=#272833')
+local bg           = normal_color.bg
+local fg           = normal_color.fg
+local bg1          = darken_hex_color(bg)
+local bg2          = darken_hex_color(bg1)
+local bg3          = darken_hex_color(bg2)
+vim.cmd('highlight Bloc0 guibg='..bg1)
+vim.cmd('highlight Bloc1 guibg='..bg2)
+vim.cmd('highlight Bloc2 guibg='..bg3)
 
 ---@param lines string[]
 local function find_biggest_end_col(lines)
