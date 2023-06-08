@@ -140,7 +140,6 @@ local function color_mts_node(mts_node, lines)
                     virt_text = {
                         { string.rep(" ",
                             (mts_node.start_col - mts_node.parent.start_col) * a),
-
                             "bloc" .. mts_node.parent.color % nest_amount } },
                     virt_text_win_col = mts_node.parent.start_col * a,
                     priority = 201 - mts_node.color,
