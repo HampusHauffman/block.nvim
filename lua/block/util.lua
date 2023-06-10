@@ -22,15 +22,16 @@ local function darken_hex_color(hex_color)
 end
 
 function M.create_hl(depth)
-    local normal_color = api.nvim_get_hl(0, { name = "Normal" })
-    print(normal_color)
-    local bg        = normal_color.bg
-    local hex_color = string.format("#%06X", bg)
-    vim.cmd('highlight Bloc' .. 0 .. ' guibg=' .. hex_color)
-    for i = 1, depth do
-        hex_color = darken_hex_color(hex_color)
-        vim.cmd('highlight Bloc' .. i .. ' guibg=' .. hex_color)
-    end
+    vim.defer_fn(function() -- Getting the hl before vim loads throws an error
+        local normal_color = api.nvim_get_hl(0, { name = "Normal" })
+        local bg           = normal_color.bg
+        local hex_color    = string.format("#%06X", bg)
+        vim.cmd('highlight Bloc' .. 0 .. ' guibg=' .. hex_color)
+        for i = 1, depth do
+            hex_color = darken_hex_color(hex_color)
+            vim.cmd('highlight Bloc' .. i .. ' guibg=' .. hex_color)
+        end
+    end, 0)
 end
 
 return M
