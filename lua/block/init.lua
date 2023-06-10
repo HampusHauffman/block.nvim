@@ -19,7 +19,7 @@ function M.setup(opts)
             util.hl(i, c)
         end
     else
-        util.create_highlights_from_depth(3)
+        util.create_highlights_from_depth(M.options.depth)
     end
 
     vim.api.nvim_create_user_command('Block', require("block").toggle, {})
