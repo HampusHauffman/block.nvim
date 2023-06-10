@@ -166,7 +166,8 @@ function M.off()
     local bufnr = api.nvim_get_current_buf()
     vim.api.nvim_buf_clear_namespace(bufnr, ns_id, 0, -1)
     if buffers[bufnr] then
-        buffers[bufnr].parser:register_cbs({ on_changedtree = {} })
+        buffers[bufnr].parser:register_cbs({ on_changedtree = function() end }) -- Register an empty function to remove the previous callback
+
         buffers[bufnr] = nil
     end
 end
