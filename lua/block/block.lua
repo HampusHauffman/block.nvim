@@ -18,7 +18,7 @@ local buffers     = {}
 local api         = vim.api
 local ts          = vim.treesitter
 local ns_id       = vim.api.nvim_create_namespace('bloc')
-local nest_amount = require("block.util").options.depth
+local nest_amount = require("block").options.depth
 
 
 
