@@ -20,9 +20,6 @@ local ts          = vim.treesitter
 local ns_id       = vim.api.nvim_create_namespace('bloc')
 local nest_amount = require("block").options.depth
 
-
-
-
 ---@param lines string[]
 local function find_biggest_end_col(lines)
     local max = 0
