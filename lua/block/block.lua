@@ -1,4 +1,4 @@
-local M       = {}
+local M           = {}
 
 ---@class MTSNode
 ---@field children MTSNode[]
@@ -9,15 +9,16 @@ local M       = {}
 ---@field color integer
 ---@field pad integer
 ---@field parent MTSNode | nil
-local MTSNode = {}
+local MTSNode     = {}
 
-local parsers = require('nvim-treesitter.parsers')
+local parsers     = require('nvim-treesitter.parsers')
 
 --- @type table<integer,{lang:string, parser:LanguageTree}>
-local buffers = {}
-local api     = vim.api
-local ts      = vim.treesitter
-local ns_id   = vim.api.nvim_create_namespace('bloc')
+local buffers     = {}
+local api         = vim.api
+local ts          = vim.treesitter
+local ns_id       = vim.api.nvim_create_namespace('bloc')
+local nest_amount = require("block.util").options.depth
 
 
 
