@@ -29,9 +29,9 @@ function M.create_highlights_from_depth(depth, percent)
         local normal_color = api.nvim_get_hl(0, { name = "Normal" })
         local bg           = normal_color.bg
         local hex_color    = string.format("#%06X", bg)
-        M.hl(0, hex_color)
-        for i = 1, depth do
-            M.hl(i, darken_hex_color(hex_color, percent))
+        for i = 0, depth do
+            M.hl(i, hex_color)
+            hex_color = darken_hex_color(hex_color, percent)
         end
     end, 0)
 end
