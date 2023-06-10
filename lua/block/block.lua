@@ -144,7 +144,7 @@ local function add_buff_and_start(bufnr)
     local parser = ts.get_parser(bufnr, lang)
     buffers[bufnr] = { lang = lang, parser = parser }
     update(bufnr)
-    parser:register_cbs({
+    buffers[bufnr].parser:register_cbs({
         on_changedtree = function()
             update(bufnr)
             vim.defer_fn(function()
