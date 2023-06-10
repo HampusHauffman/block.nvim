@@ -14,7 +14,7 @@ local MTSNode     = {}
 local parsers     = require('nvim-treesitter.parsers')
 
 --- @type table<integer,{lang:string, parser:LanguageTree}>
-local buffers     = {}
+buffers           = {}
 local api         = vim.api
 local ts          = vim.treesitter
 local ns_id       = vim.api.nvim_create_namespace('bloc')
