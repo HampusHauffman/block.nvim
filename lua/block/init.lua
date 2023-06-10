@@ -1,6 +1,6 @@
 local M = {}
 local util = require("block.util")
-local block = require("block")
+local block = require("block.block")
 ---@class Opts
 ---@field percent number  -- The change in color. 0.8 would change each box to be 20% darker than the last and 1.2 would be 20% brighter
 ---@field depth number -- De depths of changing colors. Defaults to 3
@@ -23,9 +23,11 @@ function M.setup(opts)
         util.create_highlights_from_depth(M.options.depth)
     end
 
-    vim.api.nvim_create_user_command('Block', M.block.toggle, {})
-    vim.api.nvim_create_user_command('BlockOn', M.block.on, {})
-    vim.api.nvim_create_user_command('BlockOff', M.block.off, {})
+    vim.api.nvim_create_user_command('Block', function()
+        block.toggle()
+    end, {})
+    -- vim.api.nvim_create_user_command('BlockOn', block.on, {})
+    --vim.api.nvim_create_user_command('BlockOff', block.off, {})
 end
 
 return setmetatable(M, {
