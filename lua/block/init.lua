@@ -6,9 +6,10 @@ M.options = {
 }
 
 function M.setup(opts)
-    print("HELLO")
     M.options = vim.tbl_deep_extend("force", M.options, opts or {})
-    require("block.util").create_hl(3)
+    vim.defer_fn(function()
+        require("block.util").create_hl(3)
+    end, 0)
 end
 
 return setmetatable(M, {
