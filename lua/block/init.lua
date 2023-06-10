@@ -1,11 +1,12 @@
 local M       = {}
 
----@class Block.Config
+---@class Conf
 local options = {
     percent = 0.8,
     depth = 3,
 }
 
+---@param opts Conf
 function M.setup(opts)
     print("HELLO")
     M.options = vim.tbl_deep_extend("force", M.options, opts or {})
