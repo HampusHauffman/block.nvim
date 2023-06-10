@@ -147,9 +147,10 @@ local function add_buff_and_start(bufnr)
     buffers[bufnr].parser:register_cbs({
         on_changedtree = function()
             update(bufnr)
-            vim.defer_fn(function()
-                update(bufnr)
-            end, 0)
+            vim.defer_fn(
+                function() -- HACK: This is a hack to fix the issue of the parser not updating on the first change
+                    update(bufnr)
+                end, 0)
         end
     })
 end
@@ -165,8 +166,7 @@ function M.off()
     local bufnr = api.nvim_get_current_buf()
     vim.api.nvim_buf_clear_namespace(bufnr, ns_id, 0, -1)
     if buffers[bufnr] then
-        local parser = buffers[bufnr].parser
-        parser:register_cbs({}) -- Remove all callbacks by registering an empty table
+        buffers[bufnr].parser:register_cbs({})
         buffers[bufnr] = nil
     end
 end
