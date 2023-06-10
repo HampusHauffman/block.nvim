@@ -165,8 +165,8 @@ function M.off()
     local bufnr = api.nvim_get_current_buf()
     vim.api.nvim_buf_clear_namespace(bufnr, ns_id, 0, -1)
     if buffers[bufnr] then
-        buffers[bufnr].parser:register_cbs({})
-        buffers[bufnr] = {}
+        --buffers[bufnr].parser:register_cbs({})
+        buffers[bufnr] = nil
     end
 end
 
