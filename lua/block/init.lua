@@ -1,6 +1,5 @@
 local M = {}
 local util = require("block.util")
-local block = require("block.block")
 ---@class Opts
 ---@field percent number  -- The change in color. 0.8 would change each box to be 20% darker than the last and 1.2 would be 20% brighter
 ---@field depth number -- De depths of changing colors. Defaults to 3
@@ -28,6 +27,7 @@ function M.setup(opts)
 end
 
 vim.api.nvim_create_user_command('Block', function()
+    local block = require("block.block")
     block.toggle()
 end, {})
 
