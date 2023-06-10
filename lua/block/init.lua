@@ -23,12 +23,13 @@ function M.setup(opts)
         util.create_highlights_from_depth(M.options.depth)
     end
 
-    vim.api.nvim_create_user_command('Block', function()
-        block.toggle()
-    end, {})
     -- vim.api.nvim_create_user_command('BlockOn', block.on, {})
     --vim.api.nvim_create_user_command('BlockOff', block.off, {})
 end
+
+vim.api.nvim_create_user_command('Block', function()
+    block.toggle()
+end, {})
 
 return setmetatable(M, {
     __index = function(_, k)
