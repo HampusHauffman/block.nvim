@@ -10,7 +10,7 @@ local function darken_hex_color(hex_color)
     local b = tonumber(hex_color:sub(5, 6), 16)
 
     -- Darken the color by 2%
-    local darken_amount = 0.80
+    local darken_amount = 0.87
     r = math.floor(r * darken_amount)
     g = math.floor(g * darken_amount)
     b = math.floor(b * darken_amount)
@@ -210,5 +210,7 @@ function M.toggle()
         M.on()
     end
 end
+
+api.nvim_create_user_command("BlocToggle", M.toggle)
 
 return M
