@@ -23,7 +23,7 @@ end
 
 function M.create_hl(depth, start_color)
     local normal_color = api.nvim_get_hl(0, { name = "Normal" })
-    local bg           = start_color or normal_color.bg
+    local bg           = normal_color.bg
     local hex_color    = string.format("#%06X", bg)
     vim.cmd('highlight Bloc' .. 0 .. ' guibg=' .. hex_color)
     for i = 1, depth do
