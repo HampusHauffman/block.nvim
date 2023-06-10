@@ -15,7 +15,7 @@ M.options = {
 function M.setup(opts)
     M.options = vim.tbl_deep_extend("force", M.options, opts or {})
     if (M.options.colors) then
-        M.options.depth = #M.options.colors
+        M.options.depth = #M.options.colors-1
         for i, c in ipairs(M.options.colors) do
             util.hl(i, c)
         end

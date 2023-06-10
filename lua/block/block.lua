@@ -148,7 +148,6 @@ local function add_buff_and_start(bufnr)
     update(bufnr)
     buffers[bufnr].parser:register_cbs({
         on_changedtree = function()
-            print("OK")
             update(bufnr)
             vim.defer_fn(
                 function() -- HACK: This is a hack to fix the issue of the parser not updating on the first change
