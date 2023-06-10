@@ -8,7 +8,7 @@ M.options = {
 function M.setup(opts)
     M.options = vim.tbl_deep_extend("force", M.options, opts or {})
     require("block.util").create_hl(3)
-    vim.api.nvim_create_user_command('BlockToggle', require("block").toggle)
+    vim.api.nvim_create_user_command('BlockToggle', require("block").toggle,{})
 end
 
 return setmetatable(M, {
