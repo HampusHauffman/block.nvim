@@ -8,7 +8,7 @@ local util = require("block.util")
 
 M.options = {
     percent = 0.8,
-    depth = 3,
+    depth = 4,
 }
 
 ---@param opts Opts
@@ -17,7 +17,7 @@ function M.setup(opts)
     if (M.options.colors) then
         M.options.depth = #M.options.colors
         for i, c in ipairs(M.options.colors) do
-            util.hl(i, c)
+            util.hl(i - 1, c)
         end
     else
         util.create_highlights_from_depth(M.options.depth, M.options.percent)
