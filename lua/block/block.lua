@@ -123,7 +123,6 @@ end
 
 ---@param bufnr integer
 local function update(bufnr)
-    if not buffers[bufnr] then return end
     local lang_tree = buffers[bufnr].parser
     local trees = lang_tree:trees()
     local ts_node = trees[1]:root()
@@ -167,7 +166,7 @@ function M.off()
     vim.api.nvim_buf_clear_namespace(bufnr, ns_id, 0, -1)
     if buffers[bufnr] then
         buffers[bufnr].parser:register_cbs({})
-        buffers[bufnr] = nil
+        buffers[bufnr] = {}
     end
 end
 
