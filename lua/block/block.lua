@@ -123,6 +123,9 @@ end
 
 ---@param bufnr integer
 local function update(bufnr)
+    --unfortunate bug. It seems register_cbs({}) wont unregister callbacks in v > 10 so this just checks that. no performace degredation should occur.
+    if buffers[bufnr] == nil then return end
+
     local lang_tree = buffers[bufnr].parser
     local trees = lang_tree:trees()
     local ts_node = trees[1]:root()
@@ -167,7 +170,6 @@ function M.off()
     vim.api.nvim_buf_clear_namespace(bufnr, ns_id, 0, -1)
     if buffers[bufnr] then
         buffers[bufnr].parser:register_cbs({ on_changedtree = function() end }) -- Register an empty function to remove the previous callback
-        print(vim.inspect(buffers[bufnr].parser))
         buffers[bufnr] = nil
     end
 end
