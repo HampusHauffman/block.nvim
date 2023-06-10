@@ -123,6 +123,7 @@ end
 
 ---@param bufnr integer
 local function update(bufnr)
+    if not buffers[bufnr] then return end
     local lang_tree = buffers[bufnr].parser
     local trees = lang_tree:trees()
     local ts_node = trees[1]:root()
@@ -136,7 +137,6 @@ local function update(bufnr)
     local l = convert_ts_node(ts_node, 0, lines, -1, -1)
     color_mts_node(l, lines)
 end
-
 
 ---Update the parser for a buffer.
 local function add_buff_and_start(bufnr)
