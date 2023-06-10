@@ -8,7 +8,7 @@ local options = {
 
 
 function M.setup(opts)
-    opts = vim.tbl_deep_extend("force", M.defaults, opts or {})
+    opts = vim.tbl_deep_extend("force", M.options, opts or {})
     M.options = opts
     require("block.util").create_hl(M.options.depth, M.options.start_color)
 end
