@@ -21,7 +21,7 @@ local function darken_hex_color(hex_color)
     return darkened_hex_color
 end
 
-function M.create_hl(depth, start_color)
+function M.create_hl(depth)
     local normal_color = api.nvim_get_hl(0, { name = "Normal" })
     local bg           = normal_color.bg
     local hex_color    = string.format("#%06X", bg)
