@@ -42,12 +42,11 @@ Defaults:
 Currently there is no config options.
 You can turn this on by default with an aucmd:
 ```lua
-vim.cmd([[
-  augroup BionicAutocmd
-    autocmd!
-    autocmd FileType * Bionic
-  augroup END
-]])
+     vim.api.nvim_create_autocmd( 'FileType', { pattern = 'tex',
+         callback = function(args)
+             require("block").on()
+         end
+     })
 ```
 
 ## ⁉️ Motivation

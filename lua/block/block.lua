@@ -1,4 +1,4 @@
-local M           = {}
+local M       = {}
 
 ---@class MTSNode
 ---@field children MTSNode[]
@@ -9,11 +9,10 @@ local M           = {}
 ---@field color integer
 ---@field pad integer
 ---@field parent MTSNode | nil
-local MTSNode     = {}
+local MTSNode = {}
 
-local parsers     = require('nvim-treesitter.parsers')
 
---- @type table<integer,{lang:string, parser:LanguageTree}>
+--- @type table<integer,{parser:LanguageTree}>
 local buffers     = {}
 local api         = vim.api
 local ts          = vim.treesitter
@@ -142,9 +141,8 @@ end
 
 ---Update the parser for a buffer.
 local function add_buff_and_start(bufnr)
-    local lang = parsers.get_buf_lang(bufnr)
-    local parser = ts.get_parser(bufnr, lang)
-    buffers[bufnr] = { lang = lang, parser = parser }
+    local parser = ts.get_parser(bufnr)
+    buffers[bufnr] = { parser = parser }
     update(bufnr)
     buffers[bufnr].parser:register_cbs({
         on_changedtree = function()
