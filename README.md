@@ -39,6 +39,16 @@ Defaults:
 --        }
     })
 ```
+Currently there is no config options.
+You can turn this on by default with an aucmd:
+```lua
+vim.cmd([[
+  augroup BionicAutocmd
+    autocmd!
+    autocmd FileType * Bionic
+  augroup END
+]])
+```
 
 ## ⁉️ Motivation
 This plugin is something i've wanted for a while but havent found any previous implementation of in neovim. 
