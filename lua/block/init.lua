@@ -19,14 +19,15 @@ function M.setup(opts)
         for i, c in ipairs(M.options.colors) do
             util.hl(i - 1, c)
         end
+
     else
         util.create_highlights_from_depth(M.options.depth, M.options.percent)
     end
-end
 
-vim.api.nvim_create_user_command('Block', require("block.block").toggle, {})
-vim.api.nvim_create_user_command('BlockOn', require("block.block").on, {})
-vim.api.nvim_create_user_command('BlockOff', require("block.block").off, {})
+    vim.api.nvim_create_user_command('Block', require("block").toggle, {})
+    vim.api.nvim_create_user_command('BlockOn', require("block").on, {})
+    vim.api.nvim_create_user_command('BlockOff', require("block").off, {})
+end
 
 return setmetatable(M, {
     __index = function(_, k)
