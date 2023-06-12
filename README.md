@@ -42,7 +42,6 @@ To change the defaults you can change any of the following values:
 ## ⁉️ Motivation
 This plugin is something i've wanted for a while but havent found any previous implementation of in neovim. 
 My hope is it will help with legibility in deeply nested code.
-There is [Blockman](https://marketplace.visualstudio.com/items?itemName=leodevbro.blockman) for VsCode which however.
 
 ## 📝 Todo
 * Bug test and fix any community found issues
