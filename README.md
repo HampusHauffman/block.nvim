@@ -39,7 +39,7 @@ To change the defaults you can change any of the following values:
     })
 ```
 
-## ⁉️ Motivation
+## 🤔 Motivation
 This plugin is something i've wanted for a while but havent found any previous implementation of in neovim. 
 My hope is it will help with legibility in deeply nested code.
 
