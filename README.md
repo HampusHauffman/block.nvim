@@ -16,7 +16,7 @@ Neovim Stable release and up (Have not tested how far back this works).
     config = function()
         require("block").setup({
             percent = 0.8,
-            depth = 3,
+            depth = 4,
         })
     end
 },
@@ -25,12 +25,12 @@ Neovim Stable release and up (Have not tested how far back this works).
 Defaults: 
 ```lua
 ---@field percent number  -- The change in color. 0.8 would change each box to be 20% darker than the last and 1.2 would be 20% brighter
----@field depth number -- De depths of changing colors. Defaults to 3
+---@field depth number -- De depths of changing colors. Defaults to 4. After this the colors reset. Note that the first color is taken from your "Normal" highlight so a 4 is 3 new colors
 ---@field colors string [] | nil -- A list of colors to use instead. if this is not nil depth and percent are not used
 
     require("block").setup({
         percent = 0.8,
-        depth = 3,
+        depth = 4,
         colors = nil
 --        colors = {
 --            "#ff0000"
