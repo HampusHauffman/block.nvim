@@ -1,6 +1,6 @@
 # block.nvim 
-![image](https://github.com/HampusHauffman/bionic.nvim/assets/3845743/8ebb44af-9a59-43f6-b80a-4ea24c452f1a)
-Screenshot is taken on `Kitty` terminal with `font_family FiraCode Nerd Font` and `dracula`as colortheme
+![image](https://user-images.githubusercontent.com/3845743/245099616-f6259c1d-3901-4860-8b4a-21e63f2f00db.png)
+Screenshot is taken on `Kitty` terminal with `font_family FiraCode Nerd Font` and `dracula`as colortheme.
 ## ⚡️ Requirements
 Neovim Stable release
 ## 🚀 Usage
@@ -39,6 +39,7 @@ Defaults:
 --        }
     })
 ```
+
 ## ⁉️ Motivation
 This plugin is something i've wanted for a while but havent found any previous implementation of in neovim. 
 There is [Blockman](https://marketplace.visualstudio.com/items?itemName=leodevbro.blockman) for VsCode which however.
@@ -47,3 +48,6 @@ There is [Blockman](https://marketplace.visualstudio.com/items?itemName=leodevbr
 
 ## 📝 Todo
 * Add vim docs for usage
+
+![image](https://user-images.githubusercontent.com/3845743/245100148-f392affa-4d5b-4c46-8bcb-56d9356a53e8.png)
+This is an example of manually set colors.
