@@ -45,7 +45,9 @@ This plugin is something i've wanted for a while but havent found any previous i
 There is [Blockman](https://marketplace.visualstudio.com/items?itemName=leodevbro.blockman) for VsCode which however.
 
 ## 📝 Todo
+* Bug test and fix any community found issues
 * Add vim docs for usage
+* Handle multi character characters such as emojis
 
 ![image](https://user-images.githubusercontent.com/3845743/245100148-f392affa-4d5b-4c46-8bcb-56d9356a53e8.png)
 This is an example of manually set colors.
