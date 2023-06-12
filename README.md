@@ -4,7 +4,7 @@ Screenshot is taken on `Kitty` terminal with `font_family FiraCode Nerd Font` an
 ## ⚡️ Requirements
 Neovim Stable release
 ## 🚀 Usage
-#### `:Bloc` Toggle current buffer
+#### `:Block` Toggle current buffer
 #### `:BlockOn` On current buffer
 #### `:BlockOff` Off current buffer
 
