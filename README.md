@@ -21,10 +21,10 @@ Neovim Stable release and up (Have not tested how far back this works).
 ## ⚙️ Configuration / Setup
 To change the defaults you can change any of the following values: 
 ```lua
----@field percent number  -- The change in color. 0.8 would change each box to be 20% darker than the last and 1.2 would be 20% brighter
----@field depth number -- De depths of changing colors. Defaults to 4. After this the colors reset. Note that the first color is taken from your "Normal" highlight so a 4 is 3 new colors
----@field automatic boolean -- Automatically turns this on when treesitter finds a parser for the current file
----@field colors string [] | nil -- A list of colors to use instead. if this is not nil depth and percent are not used
+---@field percent number  -- The change in color. 0.8 would change each box to be 20% darker than the last and 1.2 would be 20% brighter.
+---@field depth number -- De depths of changing colors. Defaults to 4. After this the colors reset. Note that the first color is taken from your "Normal" highlight so a 4 is 3 new colors.
+---@field automatic boolean -- Automatically turns this on when treesitter finds a parser for the current file.
+---@field colors string [] | nil -- A list of colors to use instead. If this is set percent and depth are not taken into account.
 
     require("block").setup({
         percent = 0.8,
@@ -48,6 +48,7 @@ There is [Blockman](https://marketplace.visualstudio.com/items?itemName=leodevbr
 * Bug test and fix any community found issues
 * Add vim docs for usage
 * Handle multi character characters such as emojis
+* Potentially add virtual lines as a means to improve visibility even more
 
 ![image](https://user-images.githubusercontent.com/3845743/245100148-f392affa-4d5b-4c46-8bcb-56d9356a53e8.png)
 This is an example of manually set colors.
