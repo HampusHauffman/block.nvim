@@ -24,9 +24,9 @@ function M.setup(opts)
     end
 end
 
-vim.api.nvim_create_user_command('Block', require("block").toggle, {})
-vim.api.nvim_create_user_command('BlockOn', require("block").on, {})
-vim.api.nvim_create_user_command('BlockOff', require("block").off, {})
+vim.api.nvim_create_user_command('Block', require("block.block").toggle, {})
+vim.api.nvim_create_user_command('BlockOn', require("block.block").on, {})
+vim.api.nvim_create_user_command('BlockOff', require("block.block").off, {})
 
 return setmetatable(M, {
     __index = function(_, k)
