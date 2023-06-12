@@ -42,6 +42,7 @@ Defaults:
 
 ## ⁉️ Motivation
 This plugin is something i've wanted for a while but havent found any previous implementation of in neovim. 
+My hope is it will help with legibility in deeply nested code.
 There is [Blockman](https://marketplace.visualstudio.com/items?itemName=leodevbro.blockman) for VsCode which however.
 
 ## 📝 Todo
