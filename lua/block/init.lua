@@ -3,12 +3,14 @@ local util = require("block.util")
 ---@class Opts
 ---@field percent number  -- The change in color. 0.8 would change each box to be 20% darker than the last and 1.2 would be 20% brighter
 ---@field depth number -- De depths of changing colors. Defaults to 3
+---@field automatic boolean -- Automatically turns this on when treesitter finds a parser for the current file
 ---@field colors string [] | nil -- A list of colors to use instead. if this is not nil depth and percent are not used
 
 
 M.options = {
     percent = 0.8,
     depth = 4,
+    automatic = false,
 }
 
 ---@param opts Opts
@@ -19,9 +21,17 @@ function M.setup(opts)
         for i, c in ipairs(M.options.colors) do
             util.hl(i - 1, c)
         end
-
     else
         util.create_highlights_from_depth(M.options.depth, M.options.percent)
+    end
+
+    if M.options.automatic then
+        vim.api.nvim_create_autocmd('FileType', {
+            pattern = '*',
+            callback = function(args)
+                require("block").on()
+            end
+        })
     end
 
     vim.api.nvim_create_user_command('Block', require("block").toggle, {})
