@@ -141,18 +141,22 @@ end
 
 ---Update the parser for a buffer.
 local function add_buff_and_start(bufnr)
-    local parser = ts.get_parser(bufnr)
-    buffers[bufnr] = { parser = parser }
-    update(bufnr)
-    buffers[bufnr].parser:register_cbs({
-        on_changedtree = function()
-            update(bufnr)
-            vim.defer_fn(
-                function() -- HACK: This is a hack to fix the issue of the parser not updating on the first change
-                    update(bufnr)
-                end, 0)
-        end
-    })
+    local success, parser = pcall(ts.get_parser, bufnr)
+    if success then
+        buffers[bufnr] = { parser = parser }
+        update(bufnr)
+        buffers[bufnr].parser:register_cbs({
+            on_changedtree = function()
+                update(bufnr)
+                vim.defer_fn(
+                    function() -- HACK: This is a hack to fix the issue of the parser not updating on the first change
+                        update(bufnr)
+                    end, 0)
+            end
+        })
+    else
+        -- Handle the failure case
+    end
 end
 
 function M.on()
