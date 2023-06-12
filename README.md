@@ -52,3 +52,6 @@ There is [Blockman](https://marketplace.visualstudio.com/items?itemName=leodevbr
 
 ![image](https://user-images.githubusercontent.com/3845743/245100148-f392affa-4d5b-4c46-8bcb-56d9356a53e8.png)
 This is an example of manually set colors.
+
+### Contribution
+I will try to fix any issues found and welcome any PR for improvment of the plugin!
