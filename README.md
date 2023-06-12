@@ -44,8 +44,6 @@ Defaults:
 This plugin is something i've wanted for a while but havent found any previous implementation of in neovim. 
 There is [Blockman](https://marketplace.visualstudio.com/items?itemName=leodevbro.blockman) for VsCode which however.
 
-![image](https://github.com/HampusHauffman/bionic.nvim/assets/3845743/ef7be9fe-c91c-4c01-bb61-2e0b261bdffb)
-
 ## 📝 Todo
 * Add vim docs for usage
 
