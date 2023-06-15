@@ -23,7 +23,7 @@ local nest_amount = require("block").options.depth
 local function find_biggest_end_col(lines)
     local max = 0
     for _, i in ipairs(lines) do
-        max = math.max(max, vim.fn.strdisplaywidth(i))
+        max = math.max(max, vim.fn.strwidth(i))
     end
     return max
 end
@@ -75,7 +75,7 @@ end
 local function color_mts_node(mts_node, lines)
     for row = mts_node.start_row, math.min(#lines - 1, mts_node.end_row) do
         -- Set the padding at the end of the line
-        local str_len = string.len(lines[row + 1])
+        local str_len = vim.fn.strwidth(lines[row + 1])
         vim.api.nvim_buf_set_extmark(0, ns_id, row, 0, {
             virt_text = { { string.rep(" ", mts_node.end_col - str_len + mts_node.pad),
                 "bloc" .. mts_node.color % nest_amount } },
@@ -100,7 +100,7 @@ local function color_mts_node(mts_node, lines)
         if not expandtab then
             a = vim.lsp.util.get_effective_tabstop()
         end
-        if string.len(lines[row + 1]) == 0 then
+        if vim.fn.strdisplaywidth(lines[row + 1]) == 0 then
             if mts_node.parent ~= nil then
                 vim.api.nvim_buf_set_extmark(0, ns_id, row, 0, {
                     virt_text = {
