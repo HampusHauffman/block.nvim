@@ -145,13 +145,16 @@ function M.update(bufnr)
     local trees = lang_tree:trees()
     if #trees == 0 then return end
     local ts_node = trees[1]:root()
+    local win_info = vim.fn.getwininfo(vim.api.nvim_get_current_win())[1]
     local lines = vim.api.nvim_buf_get_lines(bufnr, 0, -1, true)
     for i, line in ipairs(lines) do
+        if i < win_info.topline or i > win_info.botline then goto continue end
         local spaces = string.rep(" ", vim.lsp.util.get_effective_tabstop()) -- Spaces equivalent to one tab
         local converted_line = string.gsub(line, "\t", spaces)
         lines[i] = converted_line
+        ::continue::
     end
-    vim.api.nvim_buf_clear_namespace(0, ns_id, 0, #lines)
+    vim.api.nvim_buf_clear_namespace(0, ns_id, 0, -1)
     local l = convert_ts_node(ts_node, 0, lines, -1, -1)
     color_mts_node(l, lines)
 end

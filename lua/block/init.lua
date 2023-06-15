@@ -34,26 +34,12 @@ function M.setup(opts)
             end
         })
     end
-    vim.api.nvim_create_autocmd('WinScrolled', {
-        pattern = '*',
-        callback = function(args)
-            local win_id = tostring(vim.api.nvim_get_current_win())
-            if not vim.v.event[win_id] then return end
-
-            if vim.v.event[win_id].leftcol > 0 then
-                vim.schedule(function ()
-                  require("block").update(args.buf)
-                end)
-            end
-        end
-    })
     vim.api.nvim_create_autocmd({ 'CursorHold' }, {
         group = 'block.nvim',
         pattern = '*',
         callback = function(args)
-            vim.schedule(function ()
-              require("block").update(args.buf)
-            end)
+            if vim.bo.buftype ~= '' then return end
+            require("block").update(args.buf)
         end
     })
 
