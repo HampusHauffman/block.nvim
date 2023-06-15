@@ -78,23 +78,19 @@ local function color_mts_node(mts_node, lines)
         -- Set the padding at the end of the line
         local str_len = string.len(lines[row + 1])
         if offset+1 <= str_len then
-          pcall(vim.api.nvim_buf_set_extmark,
-            0, ns_id, row, 0, {
+            vim.api.nvim_buf_set_extmark(0, ns_id, row, 0, {
                 virt_text = { { string.rep(" ", mts_node.end_col - str_len + mts_node.pad),
                     "bloc" .. mts_node.color % nest_amount } },
                 virt_text_win_col = str_len - offset,
                 priority = 0 + mts_node.color,
-            }
-          )
+            })
         else
-          pcall(vim.api.nvim_buf_set_extmark,
-            0, ns_id, row, 0, {
+            vim.api.nvim_buf_set_extmark( 0, ns_id, row, 0, {
                 virt_text = { { string.rep(" ", mts_node.end_col - offset + mts_node.pad),
                     "bloc" .. mts_node.color % nest_amount } },
                 virt_text_win_col = 0,
                 priority = 0 + mts_node.color,
-            }
-          )
+            })
         end
 
         -- Set the color of the line
@@ -116,17 +112,15 @@ local function color_mts_node(mts_node, lines)
         end
         if string.len(lines[row + 1]) == 0 then
             if mts_node.parent ~= nil then
-                pcall(vim.api.nvim_buf_set_extmark,
-                  0, ns_id, row, 0, {
-                      virt_text = {
-                          { string.rep(" ",
-                              (mts_node.start_col - mts_node.parent.start_col) * a),
-                              "bloc" .. mts_node.parent.color % nest_amount } },
-                      virt_text_win_col = mts_node.parent.start_col * a,
-                      virt_text_hide = true,
-                      priority = 201 - mts_node.color,
-                  }
-                )
+                vim.api.nvim_buf_set_extmark(0, ns_id, row, 0, {
+                    virt_text = {
+                        { string.rep(" ",
+                            (mts_node.start_col - mts_node.parent.start_col) * a),
+                            "bloc" .. mts_node.parent.color % nest_amount } },
+                    virt_text_win_col = mts_node.parent.start_col * a,
+                    virt_text_hide = true,
+                    priority = 201 - mts_node.color,
+                })
             end
         end
     end
