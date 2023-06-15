@@ -126,6 +126,7 @@ local function update(bufnr)
 
     local lang_tree = buffers[bufnr].parser
     local trees = lang_tree:trees()
+    if #trees == 0 then return end
     local ts_node = trees[1]:root()
     local lines = vim.api.nvim_buf_get_lines(bufnr, 0, -1, true)
     for i, line in ipairs(lines) do
