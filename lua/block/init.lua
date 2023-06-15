@@ -1,5 +1,6 @@
 local M = {}
 local util = require("block.util")
+vim.api.nvim_create_augroup('block.nvim', { clear = true })
 ---@class Opts
 ---@field percent number  -- The change in color. 0.8 would change each box to be 20% darker than the last and 1.2 would be 20% brighter.
 ---@field depth number -- De depths of changing colors. Defaults to 4. After this the colors reset. Note that the first color is taken from your "Normal" highlight so a 4 is 3 new colors.
@@ -33,6 +34,28 @@ function M.setup(opts)
             end
         })
     end
+    vim.api.nvim_create_autocmd('WinScrolled', {
+        pattern = '*',
+        callback = function(args)
+            local win_id = tostring(vim.api.nvim_get_current_win())
+            if not vim.v.event[win_id] then return end
+
+            if vim.v.event[win_id].leftcol > 0 then
+                vim.schedule(function ()
+                  require("block").update(args.buf)
+                end)
+            end
+        end
+    })
+    vim.api.nvim_create_autocmd({ 'CursorHold' }, {
+        group = 'block.nvim',
+        pattern = '*',
+        callback = function(args)
+            vim.schedule(function ()
+              require("block").update(args.buf)
+            end)
+        end
+    })
 
     vim.api.nvim_create_user_command('Block', require("block").toggle, {})
     vim.api.nvim_create_user_command('BlockOn', require("block").on, {})

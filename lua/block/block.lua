@@ -23,7 +23,7 @@ local nest_amount = require("block").options.depth
 local function find_biggest_end_col(lines)
     local max = 0
     for _, i in ipairs(lines) do
-        max = math.max(max, #i)
+        max = math.max(max, vim.fn.strwidth(i))
     end
     return max
 end
@@ -73,19 +73,34 @@ end
 -- a func called tab_to_space that converts each tab to tabstop amount of spaces
 ---@param mts_node MTSNode
 local function color_mts_node(mts_node, lines)
+    local offset = vim.fn.winsaveview().leftcol
     for row = mts_node.start_row, math.min(#lines - 1, mts_node.end_row) do
         -- Set the padding at the end of the line
         local str_len = string.len(lines[row + 1])
-        vim.api.nvim_buf_set_extmark(0, ns_id, row, 0, {
-            virt_text = { { string.rep(" ", mts_node.end_col - str_len + mts_node.pad),
-                "bloc" .. mts_node.color % nest_amount } },
-            virt_text_win_col = str_len,
-            priority = 100 + mts_node.color,
-        })
+        if offset+1 <= str_len then
+          pcall(vim.api.nvim_buf_set_extmark,
+            0, ns_id, row, 0, {
+                virt_text = { { string.rep(" ", mts_node.end_col - str_len + mts_node.pad),
+                    "bloc" .. mts_node.color % nest_amount } },
+                virt_text_win_col = str_len - offset,
+                priority = 0 + mts_node.color,
+            }
+          )
+        else
+          pcall(vim.api.nvim_buf_set_extmark,
+            0, ns_id, row, 0, {
+                virt_text = { { string.rep(" ", mts_node.end_col - offset + mts_node.pad),
+                    "bloc" .. mts_node.color % nest_amount } },
+                virt_text_win_col = 0,
+                priority = 0 + mts_node.color,
+            }
+          )
+        end
 
         -- Set the color of the line
         local l = vim.api.nvim_buf_get_lines(0, row, row + 1, false)[1]
-        if (#l > mts_node.start_col + 1) then -- Check to make sure we dont draw on empty lines
+
+        if (l and #l > mts_node.start_col + 1) then -- Check to make sure we dont draw on empty lines
             vim.api.nvim_buf_set_extmark(0, ns_id, row, mts_node.start_col, {
                 end_col = #l,
                 hl_group = "bloc" .. mts_node.color % nest_amount,
@@ -102,15 +117,17 @@ local function color_mts_node(mts_node, lines)
         end
         if string.len(lines[row + 1]) == 0 then
             if mts_node.parent ~= nil then
-                vim.api.nvim_buf_set_extmark(0, ns_id, row, 0, {
-                    virt_text = {
-                        { string.rep(" ",
-                            (mts_node.start_col - mts_node.parent.start_col) * a),
-                            "bloc" .. mts_node.parent.color % nest_amount } },
-                    virt_text_win_col = mts_node.parent.start_col * a,
-                    virt_text_hide = true,
-                    priority = 201 - mts_node.color,
-                })
+                pcall(vim.api.nvim_buf_set_extmark,
+                  0, ns_id, row, 0, {
+                      virt_text = {
+                          { string.rep(" ",
+                              (mts_node.start_col - mts_node.parent.start_col) * a),
+                              "bloc" .. mts_node.parent.color % nest_amount } },
+                      virt_text_win_col = mts_node.parent.start_col * a,
+                      virt_text_hide = true,
+                      priority = 201 - mts_node.color,
+                  }
+                )
             end
         end
     end
@@ -120,7 +137,7 @@ local function color_mts_node(mts_node, lines)
 end
 
 ---@param bufnr integer
-local function update(bufnr)
+function M.update(bufnr)
     --unfortunate bug. It seems register_cbs({}) wont unregister callbacks in v > 10 so this just checks that. no performace degredation should occur.
     if buffers[bufnr] == nil then return end
 
@@ -144,13 +161,13 @@ local function add_buff_and_start(bufnr)
     local success, parser = pcall(ts.get_parser, bufnr)
     if success then
         buffers[bufnr] = { parser = parser }
-        update(bufnr)
+        M.update(bufnr)
         buffers[bufnr].parser:register_cbs({
             on_changedtree = function()
-                update(bufnr)
+                M.update(bufnr)
                 vim.defer_fn(
                     function() -- HACK: This is a hack to fix the issue of the parser not updating on the first change
-                        update(bufnr)
+                        M.update(bufnr)
                     end, 0)
             end
         })
