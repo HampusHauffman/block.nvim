@@ -23,7 +23,7 @@ local nest_amount = require("block").options.depth
 local function find_biggest_end_col(lines)
     local max = 0
     for _, i in ipairs(lines) do
-        max = math.max(max, #i)
+        max = math.max(max, vim.fn.strdisplaywidth(i))
     end
     return max
 end
