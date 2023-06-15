@@ -1,4 +1,7 @@
 # ❐block.nvim
+![Neovim](https://img.shields.io/badge/NeoVim-%2357A143.svg?&style=for-the-badge&logo=neovim&logoColor=white)
+![GitHub repo stars](https://img.shields.io/github/stars/HampusHauffman/block.nvim?style=flat&logo=github&logoColor=whitesmoke&label=Stars⭐️ )
+
 ![image](https://user-images.githubusercontent.com/3845743/245099616-f6259c1d-3901-4860-8b4a-21e63f2f00db.png)
 Screenshot is taken on `Kitty` terminal with `font_family FiraCode Nerd Font` and `dracula` as colortheme.
 ## ⚡️ Requirements
