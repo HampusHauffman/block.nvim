@@ -127,7 +127,7 @@ local function update(bufnr)
     local lang_tree = buffers[bufnr].parser
     local trees = lang_tree:trees()
     local ts_node = trees[1]:root()
-    local lines = vim.api.nvim_buf_get_lines(0, 0, -1, true)
+    local lines = vim.api.nvim_buf_get_lines(bufnr, 0, -1, true)
     for i, line in ipairs(lines) do
         local spaces = string.rep(" ", vim.lsp.util.get_effective_tabstop()) -- Spaces equivalent to one tab
         local converted_line = string.gsub(line, "\t", spaces)
