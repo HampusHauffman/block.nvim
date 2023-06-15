@@ -39,7 +39,9 @@ function M.setup(opts)
         pattern = '*',
         callback = function(args)
             if vim.bo.buftype ~= '' then return end
-            require("block").update(args.buf)
+            vim.schedule(function ()
+                require("block").update(args.buf)
+            end)
         end
     })
 
