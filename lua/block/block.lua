@@ -121,6 +121,8 @@ end
 
 ---@param bufnr integer
 local function update(bufnr)
+    local offset = vim.fn.winsaveview().leftcol
+    print(offset)
     --unfortunate bug. It seems register_cbs({}) wont unregister callbacks in v > 10 so this just checks that. no performace degredation should occur.
     if buffers[bufnr] == nil then return end
 
