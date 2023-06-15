@@ -128,6 +128,7 @@ local function update(bufnr)
     local trees = lang_tree:trees()
     local ts_node = trees[1]:root()
     local lines = vim.api.nvim_buf_get_lines(bufnr, 0, -1, true)
+    if lines == nil then return end -- Seems an already Blocked buffer might result in this returning nil
     for i, line in ipairs(lines) do
         local spaces = string.rep(" ", vim.lsp.util.get_effective_tabstop()) -- Spaces equivalent to one tab
         local converted_line = string.gsub(line, "\t", spaces)
