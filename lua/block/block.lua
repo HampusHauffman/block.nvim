@@ -73,13 +73,14 @@ end
 -- a func called tab_to_space that converts each tab to tabstop amount of spaces
 ---@param mts_node MTSNode
 local function color_mts_node(mts_node, lines)
+    local offset = vim.fn.winsaveview().leftcol
     for row = mts_node.start_row, math.min(#lines - 1, mts_node.end_row) do
         -- Set the padding at the end of the line
         local str_len = string.len(lines[row + 1])
         vim.api.nvim_buf_set_extmark(0, ns_id, row, 0, {
             virt_text = { { string.rep(" ", mts_node.end_col - str_len + mts_node.pad),
                 "bloc" .. mts_node.color % nest_amount } },
-            virt_text_win_col = str_len,
+            virt_text_win_col = str_len - offset,
             priority = 100 + mts_node.color,
         })
 
@@ -121,8 +122,6 @@ end
 
 ---@param bufnr integer
 local function update(bufnr)
-    local offset = vim.fn.winsaveview().leftcol
-    print(offset)
     --unfortunate bug. It seems register_cbs({}) wont unregister callbacks in v > 10 so this just checks that. no performace degredation should occur.
     if buffers[bufnr] == nil then return end
 
