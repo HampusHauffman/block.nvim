@@ -38,7 +38,7 @@ end
 ---@return MTSNode
 local function convert_ts_node(ts_node, color, lines, prev_start_row, prev_start_col, parent)
     local start_row, start_col, end_row, _ = ts_node:range()
-    local node_lines = { table.unpack(lines, start_row + 1, end_row + 1) }
+    local node_lines = { unpack(lines, start_row + 1, end_row + 1) }
     local max_col = find_biggest_end_col(node_lines)
     local mts_node = {
         children = {},
