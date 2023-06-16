@@ -80,7 +80,7 @@ local function color_mts_node(mts_node, lines)
         vim.api.nvim_buf_set_extmark(0, ns_id, row, 0, {
             virt_text = { { string.rep(" ", mts_node.end_col - str_len + mts_node.pad),
                 "bloc" .. mts_node.color % nest_amount } },
-            virt_text_win_col = str_len - offset,
+            virt_text_win_col = math.min(0, str_len - offset),
             priority = 100 + mts_node.color,
         })
 
