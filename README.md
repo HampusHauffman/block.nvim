@@ -50,7 +50,7 @@ supply `bg` in the config. To figure out which value you should use for `bg`, te
 following command:
 
 ```vim
-lua vim.notify(vim.inspect(vim.api.nvim_get_hl(0, { name = "Normal" }).bg))
+hi Normal
 ```
 
 ## 🤔 Motivation

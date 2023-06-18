@@ -26,14 +26,13 @@ end
 
 function M.get_bg_color()
     local normal_color = api.nvim_get_hl(0, { name = "Normal" })
-    return normal_color.bg
+    return normal_color.bg and string.format("#%06X", normal_color.bg)
 end
 
 function M.create_highlights_from_depth(depth, percent, bg)
-    local hex_color = string.format("#%06X", bg)
     for i = 0, depth do
-        M.hl(i, hex_color)
-        hex_color = darken_hex_color(hex_color, percent)
+        M.hl(i, bg)
+        bg = darken_hex_color(bg, percent)
     end
 end
 
