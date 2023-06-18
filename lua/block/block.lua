@@ -168,7 +168,7 @@ function M.on()
                 group = 'block.nvim',
                 pattern = '*',
                 callback = function(args)
-                    require("block").on()
+                    update(bufnr)
                 end
             })
         }
