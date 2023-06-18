@@ -15,7 +15,7 @@ M.options = {
 
 ---@param opts Opts
 function M.setup(opts)
-    vim.api.nvim_create_augroup('block.nvim')
+    vim.api.nvim_create_augroup('block.nvim', {})
 
     M.options = vim.tbl_deep_extend("force", M.options, opts or {})
     if (M.options.colors) then
