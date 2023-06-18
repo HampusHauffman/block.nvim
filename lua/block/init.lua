@@ -15,6 +15,8 @@ M.options = {
 
 ---@param opts Opts
 function M.setup(opts)
+    vim.api.nvim_create_augroup('block.nvim')
+
     M.options = vim.tbl_deep_extend("force", M.options, opts or {})
     if (M.options.colors) then
         M.options.depth = #M.options.colors
@@ -27,6 +29,7 @@ function M.setup(opts)
 
     if M.options.automatic then
         vim.api.nvim_create_autocmd('FileType', {
+            group = 'block.nvim',
             pattern = '*',
             callback = function(args)
                 require("block").on()

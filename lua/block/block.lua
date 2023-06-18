@@ -12,7 +12,7 @@ local M       = {}
 local MTSNode = {}
 
 
---- @type table<integer,{parser:LanguageTree}>
+--- @type table<integer,{parser:LanguageTree,scroll: integer}>
 local buffers     = {}
 local api         = vim.api
 local ts          = vim.treesitter
@@ -80,7 +80,7 @@ local function color_mts_node(mts_node, lines)
         vim.api.nvim_buf_set_extmark(0, ns_id, row, 0, {
             virt_text = { { string.rep(" ", mts_node.end_col - str_len + mts_node.pad),
                 "bloc" .. mts_node.color % nest_amount } },
-            virt_text_win_col = math.max(0,str_len - offset),
+            virt_text_win_col = math.max(0, str_len - offset),
             priority = 100 + mts_node.color,
         })
 
@@ -108,7 +108,7 @@ local function color_mts_node(mts_node, lines)
                         { string.rep(" ",
                             (mts_node.start_col - mts_node.parent.start_col) * a),
                             "bloc" .. mts_node.parent.color % nest_amount } },
-                    virt_text_win_col = mts_node.parent.start_col * a,
+                    virt_text_win_col = math.max(0, mts_node.parent.start_col * a),
                     virt_text_hide = true,
                     priority = 201 - mts_node.color,
                 })
@@ -163,6 +163,13 @@ function M.on()
     local bufnr = api.nvim_get_current_buf()
     if not buffers[bufnr] then
         add_buff_and_start(bufnr)
+        buffers[bufnr].scroll = vim.api.nvim_create_autocmd('WinScrolled', {
+            group = 'block.nvim',
+            pattern = '*',
+            callback = function(args)
+                require("block").on()
+            end
+        })
     end
 end
 
@@ -171,6 +178,7 @@ function M.off()
     vim.api.nvim_buf_clear_namespace(bufnr, ns_id, 0, -1)
     if buffers[bufnr] then
         buffers[bufnr].parser:register_cbs({ on_changedtree = function() end }) -- Register an empty function to remove the previous callback
+        nvim_del_autocmd(buffers[bufnr].scroll)
         buffers[bufnr] = nil
     end
 end
