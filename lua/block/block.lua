@@ -163,13 +163,15 @@ function M.on()
     local bufnr = api.nvim_get_current_buf()
     if not buffers[bufnr] then
         add_buff_and_start(bufnr)
-        buffers[bufnr].scroll = vim.api.nvim_create_autocmd('WinScrolled', {
-            group = 'block.nvim',
-            pattern = '*',
-            callback = function(args)
-                require("block").on()
-            end
-        })
+        buffers[bufnr] = {
+            scroll = vim.api.nvim_create_autocmd('WinScrolled', {
+                group = 'block.nvim',
+                pattern = '*',
+                callback = function(args)
+                    require("block").on()
+                end
+            })
+        }
     end
 end
 
@@ -178,7 +180,7 @@ function M.off()
     vim.api.nvim_buf_clear_namespace(bufnr, ns_id, 0, -1)
     if buffers[bufnr] then
         buffers[bufnr].parser:register_cbs({ on_changedtree = function() end }) -- Register an empty function to remove the previous callback
-        nvim_del_autocmd(buffers[bufnr].scroll)
+        api.nvim_del_autocmd(buffers[bufnr].scroll)
         buffers[bufnr] = nil
     end
 end
