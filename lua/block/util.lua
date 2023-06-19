@@ -24,16 +24,16 @@ function M.hl(i, c)
     vim.cmd('highlight Bloc' .. i .. ' guibg=' .. c)
 end
 
-function M.create_highlights_from_depth(depth, percent)
-    vim.defer_fn(function() -- Getting the hl before vim loads throws an error
-        local normal_color = api.nvim_get_hl(0, { name = "Normal" })
-        local bg           = normal_color.bg
-        local hex_color    = string.format("#%06X", bg)
-        for i = 0, depth do
-            M.hl(i, hex_color)
-            hex_color = darken_hex_color(hex_color, percent)
-        end
-    end, 0)
+function M.get_bg_color()
+    local normal_color = api.nvim_get_hl(0, { name = "Normal" })
+    return normal_color.bg and string.format("#%06X", normal_color.bg)
+end
+
+function M.create_highlights_from_depth(depth, percent, bg)
+    for i = 0, depth do
+        M.hl(i, bg)
+        bg = darken_hex_color(bg, percent)
+    end
 end
 
 return M

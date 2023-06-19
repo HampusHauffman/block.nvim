@@ -1,4 +1,7 @@
 # ❐block.nvim
+![Neovim](https://img.shields.io/badge/NeoVim-%2357A143.svg?&style=for-the-badge&logo=neovim&logoColor=white)
+![GitHub repo stars](https://img.shields.io/github/stars/HampusHauffman/block.nvim?style=flat&logo=github&logoColor=whitesmoke&label=Stars⭐️ )
+
 ![image](https://user-images.githubusercontent.com/3845743/245099616-f6259c1d-3901-4860-8b4a-21e63f2f00db.png)
 Screenshot is taken on `Kitty` terminal with `font_family FiraCode Nerd Font` and `dracula` as colortheme.
 ## ⚡️ Requirements
@@ -25,17 +28,19 @@ To change the defaults you can change any of the following values:
 ---@field depth number -- De depths of changing colors. Defaults to 4. After this the colors reset. Note that the first color is taken from your "Normal" highlight so a 4 is 3 new colors.
 ---@field automatic boolean -- Automatically turns this on when treesitter finds a parser for the current file.
 ---@field colors string [] | nil -- A list of colors to use instead. If this is set percent and depth are not taken into account.
+---@field bg string? -- If you'd prefer to use a different color other than the default "Normal" highlight.
 
     require("block").setup({
         percent = 0.8,
         depth = 4,
         colors = nil,
         automatic = false,
---        colors = {
---            "#ff0000"
---            "#00ff00"
---            "#0000ff"
---        }
+--      bg = nil,
+--      colors = {
+--          "#ff0000"
+--          "#00ff00"
+--          "#0000ff"
+--      },
     })
 ```
 
