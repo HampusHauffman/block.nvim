@@ -12,7 +12,7 @@ local M       = {}
 local MTSNode = {}
 
 
---- @type table<integer,{parser:LanguageTree,scroll: integer}>
+--- @type table<integer,{parser:LanguageTree,scroll: integer, prev_left_col: integer}>
 local buffers     = {}
 local api         = vim.api
 local ts          = vim.treesitter
@@ -151,13 +151,26 @@ local function add_buff_and_start(bufnr)
         update(bufnr)
         buffers[bufnr].parser:register_cbs({
             on_changedtree = function()
-                update(bufnr)
                 vim.defer_fn(
                     function() -- HACK: This is a hack to fix the issue of the parser not updating on the first change
                         update(bufnr)
                     end, 0)
             end
         })
+
+        -- This might cause a lot of latency and should be improved.
+        -- Maybe check if wrap is even off in the first. Also other performance improvemts come before this one
+        buffers[bufnr].prev_left_col = vim.fn.winsaveview().leftcol
+        buffers[bufnr].scroll =
+            vim.api.nvim_create_autocmd('WinScrolled', {
+                group = 'block.nvim',
+                pattern = string.format('<buffer=%d>', bufnr),
+                callback = function(args)
+                    if buffers[bufnr].prev_left_col == vim.fn.winsaveview().leftcol then return end -- This is in order to not update unless horizontal scrolled
+                    buffers[bufnr].prev_left_col = vim.fn.winsaveview().leftcol
+                    update(bufnr)
+                end
+            })
     else
         -- Handle the failure case
     end
@@ -167,14 +180,6 @@ function M.on()
     local bufnr = api.nvim_get_current_buf()
     if not buffers[bufnr] then
         add_buff_and_start(bufnr)
-        buffers[bufnr].scroll =
-            vim.api.nvim_create_autocmd('WinScrolled', {
-                group = 'block.nvim',
-                pattern = string.format('<buffer=%d>', bufnr),
-                callback = function(args)
-                    update(bufnr)
-                end
-            })
     end
 end
 
