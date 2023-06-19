@@ -5,7 +5,7 @@ local util = require("block.util")
 ---@field depth number -- De depths of changing colors. Defaults to 4. After this the colors reset. Note that the first color is taken from your "Normal" highlight so a 4 is 3 new colors.
 ---@field automatic boolean -- Automatically turns this on when treesitter finds a parser for the current file.
 ---@field colors string [] | nil -- A list of colors to use instead. If this is set percent and depth are not taken into account.
----@field bg string? -- Set this if block.nvim cannot automatically find your background color.
+---@field bg string? -- Set this if block.nvim cannot automatically find your background color. (Relevant if you use transparent colors)
 
 
 M.options = {
