@@ -5,7 +5,7 @@ local util = require("block.util")
 ---@field depth number -- De depths of changing colors. Defaults to 4. After this the colors reset. Note that the first color is taken from your "Normal" highlight so a 4 is 3 new colors.
 ---@field automatic boolean -- Automatically turns this on when treesitter finds a parser for the current file.
 ---@field colors string [] | nil -- A list of colors to use instead. If this is set percent and depth are not taken into account.
----@field bg string? -- Set this if block.nvim cannot automatically find your background color.
+---@field bg string? -- Set this if block.nvim cannot automatically find your background color. (Relevant if you use transparent colors)
 
 
 M.options = {
@@ -16,6 +16,8 @@ M.options = {
 
 ---@param opts Opts
 function M.setup(opts)
+    vim.api.nvim_create_augroup('block.nvim', {})
+
     M.options = vim.tbl_deep_extend("force", M.options, opts or {})
     if M.options.colors then
         M.options.depth = #M.options.colors
@@ -35,6 +37,7 @@ function M.setup(opts)
 
     if M.options.automatic then
         vim.api.nvim_create_autocmd('FileType', {
+            group = 'block.nvim',
             pattern = '*',
             callback = function(args)
                 require("block").on()

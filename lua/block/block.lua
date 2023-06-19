@@ -12,7 +12,7 @@ local M       = {}
 local MTSNode = {}
 
 
---- @type table<integer,{parser:LanguageTree}>
+--- @type table<integer,{parser:LanguageTree,scroll: integer, prev_left_col: integer}>
 local buffers     = {}
 local api         = vim.api
 local ts          = vim.treesitter
@@ -71,29 +71,32 @@ local function convert_ts_node(ts_node, color, lines, prev_start_row, prev_start
 end
 
 -- a func called tab_to_space that converts each tab to tabstop amount of spaces
+---@param bufnr integer
 ---@param mts_node MTSNode
-local function color_mts_node(mts_node, lines)
+local function color_mts_node(bufnr, mts_node, lines)
+    local offset = vim.fn.winsaveview().leftcol
     for row = mts_node.start_row, math.min(#lines - 1, mts_node.end_row) do
-        -- Set the padding at the end of the line
         local str_len = vim.fn.strdisplaywidth(lines[row + 1])
-        vim.api.nvim_buf_set_extmark(0, ns_id, row, 0, {
-            virt_text = { { string.rep(" ", mts_node.end_col - str_len + mts_node.pad),
-                "bloc" .. mts_node.color % nest_amount } },
-            virt_text_win_col = str_len,
+        -- Set the padding at the end of the line
+        vim.api.nvim_buf_set_extmark(bufnr, ns_id, row, 0, {
+            virt_text = {
+                -- end_col + pad - str_len or use offset of we're offset more than str_len
+                { string.rep(" ", mts_node.end_col + mts_node.pad - ((offset + 1) <= str_len and str_len or offset)),
+                    "bloc" .. mts_node.color % nest_amount } },
+            virt_text_win_col = math.max(0, str_len - offset),
             priority = 100 + mts_node.color,
         })
 
         -- Set the color of the line
-        local l = vim.api.nvim_buf_get_lines(0, row, row + 1, false)[1]
+        local l = vim.api.nvim_buf_get_lines(bufnr, row, row + 1, false)[1]
         if (#l > mts_node.start_col + 1) then -- Check to make sure we dont draw on empty lines
-            vim.api.nvim_buf_set_extmark(0, ns_id, row, mts_node.start_col, {
+            vim.api.nvim_buf_set_extmark(bufnr, ns_id, row, mts_node.start_col, {
                 end_col = #l,
                 hl_group = "bloc" .. mts_node.color % nest_amount,
                 virt_text_hide = true,
                 priority = 100 + mts_node.color,
             })
         end
-
         -- Handle empty lines
         local expandtab = vim.bo.expandtab -- TODO: Move this to a better place
         local a = 1
@@ -102,7 +105,7 @@ local function color_mts_node(mts_node, lines)
         end
         if vim.fn.strdisplaywidth(lines[row + 1]) == 0 then
             if mts_node.parent ~= nil then
-                vim.api.nvim_buf_set_extmark(0, ns_id, row, 0, {
+                vim.api.nvim_buf_set_extmark(bufnr, ns_id, row, 0, {
                     virt_text = {
                         { string.rep(" ",
                             (mts_node.start_col - mts_node.parent.start_col) * a),
@@ -115,7 +118,7 @@ local function color_mts_node(mts_node, lines)
         end
     end
     for _, child in ipairs(mts_node.children) do
-        color_mts_node(child, lines)
+        color_mts_node(bufnr, child, lines)
     end
 end
 
@@ -136,24 +139,38 @@ local function update(bufnr)
     end
     vim.api.nvim_buf_clear_namespace(0, ns_id, 0, #lines)
     local l = convert_ts_node(ts_node, 0, lines, -1, -1)
-    color_mts_node(l, lines)
+    color_mts_node(bufnr, l, lines)
 end
 
 ---Update the parser for a buffer.
 local function add_buff_and_start(bufnr)
     local success, parser = pcall(ts.get_parser, bufnr)
     if success then
-        buffers[bufnr] = { parser = parser }
+        buffers[bufnr] = {}
+        buffers[bufnr].parser = parser
         update(bufnr)
         buffers[bufnr].parser:register_cbs({
             on_changedtree = function()
-                update(bufnr)
                 vim.defer_fn(
                     function() -- HACK: This is a hack to fix the issue of the parser not updating on the first change
                         update(bufnr)
                     end, 0)
             end
         })
+
+        -- This might cause a lot of latency and should be improved.
+        -- Maybe check if wrap is even off in the first. Also other performance improvemts come before this one
+        buffers[bufnr].prev_left_col = vim.fn.winsaveview().leftcol
+        buffers[bufnr].scroll =
+            vim.api.nvim_create_autocmd('WinScrolled', {
+                group = 'block.nvim',
+                pattern = string.format('<buffer=%d>', bufnr),
+                callback = function(args)
+                    if buffers[bufnr].prev_left_col == vim.fn.winsaveview().leftcol then return end -- This is in order to not update unless horizontal scrolled
+                    buffers[bufnr].prev_left_col = vim.fn.winsaveview().leftcol
+                    update(bufnr)
+                end
+            })
     else
         -- Handle the failure case
     end
@@ -171,6 +188,7 @@ function M.off()
     vim.api.nvim_buf_clear_namespace(bufnr, ns_id, 0, -1)
     if buffers[bufnr] then
         buffers[bufnr].parser:register_cbs({ on_changedtree = function() end }) -- Register an empty function to remove the previous callback
+        api.nvim_del_autocmd(buffers[bufnr].scroll)
         buffers[bufnr] = nil
     end
 end
