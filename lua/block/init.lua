@@ -17,7 +17,7 @@ M.options = {
 ---@param opts Opts
 function M.setup(opts)
     M.options = vim.tbl_deep_extend("force", M.options, opts or {})
-    if (M.options.colors) then
+    if M.options.colors then
         M.options.depth = #M.options.colors
         for i, c in ipairs(M.options.colors) do
             util.hl(i - 1, c)
@@ -28,12 +28,7 @@ function M.setup(opts)
             if bg_color then
                 util.create_highlights_from_depth(M.options.depth, M.options.percent, bg_color)
             else
-                vim.notify_once(
-                    "block.nvim could not find your background color.\n"
-                        .. "Either use a colorscheme which sets guibg for Normal, or set `bg` in your block.nvim config.\n"
-                        .. "(see the Troubleshooting section of README.md for more details)",
-                    vim.log.levels.ERROR
-                )
+                vim.notify_once("block.nvim could not find your background color.\n", vim.log.levels.ERROR)
             end
         end, 0)
     end

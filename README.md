@@ -28,29 +28,20 @@ To change the defaults you can change any of the following values:
 ---@field depth number -- De depths of changing colors. Defaults to 4. After this the colors reset. Note that the first color is taken from your "Normal" highlight so a 4 is 3 new colors.
 ---@field automatic boolean -- Automatically turns this on when treesitter finds a parser for the current file.
 ---@field colors string [] | nil -- A list of colors to use instead. If this is set percent and depth are not taken into account.
----@field bg string? -- Set this if block.nvim cannot automatically find your background color.
+---@field bg string? -- If you'd prefer to use a different color other than the default "Normal" highlight.
 
     require("block").setup({
         percent = 0.8,
         depth = 4,
         colors = nil,
         automatic = false,
---        colors = {
---            "#ff0000"
---            "#00ff00"
---            "#0000ff"
---        },
-        bg = nil,
+--      bg = nil,
+--      colors = {
+--          "#ff0000"
+--          "#00ff00"
+--          "#0000ff"
+--      },
     })
-```
-
-### 🔧 Troubleshooting
-If block.nvim cannot determine your background color, for instance if you're using a transparent colorscheme, you must manually
-supply `bg` in the config. To figure out which value you should use for `bg`, temporarily turn off transparency and run the
-following command:
-
-```vim
-hi Normal
 ```
 
 ## 🤔 Motivation
