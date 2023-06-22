@@ -75,6 +75,7 @@ end
 ---@param mts_node MTSNode
 local function color_mts_node(bufnr, mts_node, lines)
     local offset = vim.fn.winsaveview().leftcol
+
     for row = mts_node.start_row, math.min(#lines - 1, mts_node.end_row) do
         local str_len = vim.fn.strdisplaywidth(lines[row + 1])
         -- Set the padding at the end of the line
@@ -132,11 +133,6 @@ local function update(bufnr)
     if #trees == 0 then return end -- Seems an already Blocked buffer might result in this returning nil
     local ts_node = trees[1]:root()
     local lines = vim.api.nvim_buf_get_lines(bufnr, 0, -1, true)
-    for i, line in ipairs(lines) do
-        local spaces = string.rep(" ", vim.lsp.util.get_effective_tabstop()) -- Spaces equivalent to one tab
-        local converted_line = string.gsub(line, "\t", spaces)
-        lines[i] = converted_line
-    end
     vim.api.nvim_buf_clear_namespace(0, ns_id, 0, #lines)
     local l = convert_ts_node(ts_node, 0, lines, -1, -1)
     color_mts_node(bufnr, l, lines)
@@ -200,6 +196,44 @@ function M.toggle()
     else
         M.on()
     end
+end
+
+---@param mts_node MTSNode
+---@return MTSNode
+local function find_smallest_node(mts_node)
+    local cursor = api.nvim_win_get_cursor(0)
+    local row = cursor[1]
+
+    local smallest = mts_node
+
+    local diff = math.abs(mts_node.start_row - row)
+    for _, child in ipairs(mts_node.children) do
+        local child_smallest = find_smallest_node(child)
+        local child_dif = row - child_smallest.start_row
+        if child_dif < diff and child_dif >= 0 then
+            smallest = child_smallest
+            diff = child_dif
+            print(row, child_dif, child.start_row, child.end_row)
+        end
+    end
+
+
+    return smallest
+end
+
+
+function M.select()
+    local bufnr = api.nvim_get_current_buf()
+
+    if buffers[bufnr] == nil then return end
+
+    local lang_tree = buffers[bufnr].parser
+    local trees = lang_tree:trees()
+    if #trees == 0 then return end -- Seems an already Blocked buffer might result in this returning nil
+    local ts_node = trees[1]:root()
+    local lines = vim.api.nvim_buf_get_lines(bufnr, 0, -1, true)
+    local l = convert_ts_node(ts_node, 0, lines, -1, -1)
+    local k = find_smallest_node(l)
 end
 
 return M
