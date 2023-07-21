@@ -12,7 +12,7 @@ local M       = {}
 local MTSNode = {}
 
 
---- @type table<integer,{parser:LanguageTree,scroll: integer, prev_left_col: integer}>
+--- @type table<integer,{parser:LanguageTree,scroll: integer, prev_left_col: integer, mts_node:MTSNode, max_row:integer, min_row:integer}>
 local buffers     = {}
 local api         = vim.api
 local ts          = vim.treesitter
@@ -73,11 +73,15 @@ end
 -- a func called tab_to_space that converts each tab to tabstop amount of spaces
 ---@param bufnr integer
 ---@param mts_node MTSNode
-local function color_mts_node(bufnr, mts_node, lines)
+local function color_mts_node(bufnr, mts_node, win_start_row, win_end_row)
+    if mts_node.start_row > win_end_row or mts_node.end_row < win_start_row then return end
     local offset = vim.fn.winsaveview().leftcol
 
-    for row = mts_node.start_row, math.min(#lines - 1, mts_node.end_row) do
-        local str_len = vim.fn.strdisplaywidth(lines[row + 1])
+    for row = mts_node.start_row, mts_node.end_row - 1 do
+        local line = vim.api.nvim_buf_get_lines(bufnr, row, row + 1, true)[1]
+        --print(row)
+        --print(line)
+        local str_len = vim.fn.strdisplaywidth(line)
         -- Set the padding at the end of the line
         vim.api.nvim_buf_set_extmark(bufnr, ns_id, row, 0, {
             virt_text = {
@@ -89,10 +93,9 @@ local function color_mts_node(bufnr, mts_node, lines)
         })
 
         -- Set the color of the line
-        local l = vim.api.nvim_buf_get_lines(bufnr, row, row + 1, false)[1]
-        if (#l > mts_node.start_col + 1) then -- Check to make sure we dont draw on empty lines
+        if (#line > mts_node.start_col + 1) then -- Check to make sure we dont draw on empty lines
             vim.api.nvim_buf_set_extmark(bufnr, ns_id, row, mts_node.start_col, {
-                end_col = #l,
+                end_col = #line,
                 hl_group = "bloc" .. mts_node.color % nest_amount,
                 virt_text_hide = true,
                 priority = 100 + mts_node.color,
@@ -104,7 +107,7 @@ local function color_mts_node(bufnr, mts_node, lines)
         if not expandtab then
             a = vim.lsp.util.get_effective_tabstop()
         end
-        if vim.fn.strdisplaywidth(lines[row + 1]) == 0 then
+        if vim.fn.strdisplaywidth(line) == 0 then
             if mts_node.parent ~= nil then
                 vim.api.nvim_buf_set_extmark(bufnr, ns_id, row, 0, {
                     virt_text = {
@@ -113,29 +116,39 @@ local function color_mts_node(bufnr, mts_node, lines)
                             "bloc" .. mts_node.parent.color % nest_amount } },
                     virt_text_win_col = mts_node.parent.start_col * a,
                     virt_text_hide = true,
-                    priority = 201 - mts_node.color,
+                    priority = 100 + mts_node.color,
                 })
             end
         end
     end
     for _, child in ipairs(mts_node.children) do
-        color_mts_node(bufnr, child, lines)
+        color_mts_node(bufnr, child, win_start_row, win_end_row)
     end
 end
 
 ---@param bufnr integer
-local function update(bufnr)
+---@param changed boolean
+local function update(bufnr, changed)
     --unfortunate bug. It seems register_cbs({}) wont unregister callbacks in v > 10 so this just checks that. no performace degredation should occur.
     if buffers[bufnr] == nil then return end
 
+    local win_id = vim.fn.bufwinid(bufnr)
+    local win_start_row = vim.fn.line("w0", win_id)
+    local win_end_row = vim.fn.line("w$", win_id)
+
+    print(win_start_row, win_end_row)
+
     local lang_tree = buffers[bufnr].parser
-    local trees = lang_tree:trees()
-    if #trees == 0 then return end -- Seems an already Blocked buffer might result in this returning nil
-    local ts_node = trees[1]:root()
-    local lines = vim.api.nvim_buf_get_lines(bufnr, 0, -1, true)
-    vim.api.nvim_buf_clear_namespace(0, ns_id, 0, #lines)
-    local l = convert_ts_node(ts_node, 0, lines, -1, -1)
-    color_mts_node(bufnr, l, lines)
+    local trees = lang_tree:tree_for_range({ win_start_row, 0, win_end_row, 0 })
+    if trees == nil then return end -- Seems an already Blocked buffer might result in this returning nil
+    local ts_node = trees:root()
+    if changed then
+        local lines = vim.api.nvim_buf_get_lines(bufnr, 0, -1, true)
+        vim.api.nvim_buf_clear_namespace(0, ns_id, win_start_row, win_end_row)
+        local l = convert_ts_node(ts_node, 0, lines, -1, -1)
+        buffers[bufnr].mts_node = l
+    end
+    color_mts_node(bufnr, buffers[bufnr].mts_node, win_start_row, win_end_row)
 end
 
 ---Update the parser for a buffer.
@@ -144,12 +157,12 @@ local function add_buff_and_start(bufnr)
     if success then
         buffers[bufnr] = {}
         buffers[bufnr].parser = parser
-        update(bufnr)
+        update(bufnr, true)
         buffers[bufnr].parser:register_cbs({
             on_changedtree = function()
                 vim.defer_fn(
                     function() -- HACK: This is a hack to fix the issue of the parser not updating on the first change
-                        update(bufnr)
+                        update(bufnr, true)
                     end, 0)
             end
         })
@@ -161,10 +174,10 @@ local function add_buff_and_start(bufnr)
             vim.api.nvim_create_autocmd('WinScrolled', {
                 group = 'block.nvim',
                 pattern = string.format('<buffer=%d>', bufnr),
-                callback = function(args)
-                    if buffers[bufnr].prev_left_col == vim.fn.winsaveview().leftcol then return end -- This is in order to not update unless horizontal scrolled
+                callback = function(_)
+                    --if buffers[bufnr].prev_left_col == vim.fn.winsaveview().leftcol then return end -- This is in order to not update unless horizontal scrolled
                     buffers[bufnr].prev_left_col = vim.fn.winsaveview().leftcol
-                    update(bufnr)
+                    update(bufnr, false)
                 end
             })
     else
@@ -196,44 +209,6 @@ function M.toggle()
     else
         M.on()
     end
-end
-
----@param mts_node MTSNode
----@return MTSNode
-local function find_smallest_node(mts_node)
-    local cursor = api.nvim_win_get_cursor(0)
-    local row = cursor[1]
-
-    local smallest = mts_node
-
-    local diff = math.abs(mts_node.start_row - row)
-    for _, child in ipairs(mts_node.children) do
-        local child_smallest = find_smallest_node(child)
-        local child_dif = row - child_smallest.start_row
-        if child_dif < diff and child_dif >= 0 then
-            smallest = child_smallest
-            diff = child_dif
-            print(row, child_dif, child.start_row, child.end_row)
-        end
-    end
-
-
-    return smallest
-end
-
-
-function M.select()
-    local bufnr = api.nvim_get_current_buf()
-
-    if buffers[bufnr] == nil then return end
-
-    local lang_tree = buffers[bufnr].parser
-    local trees = lang_tree:trees()
-    if #trees == 0 then return end -- Seems an already Blocked buffer might result in this returning nil
-    local ts_node = trees[1]:root()
-    local lines = vim.api.nvim_buf_get_lines(bufnr, 0, -1, true)
-    local l = convert_ts_node(ts_node, 0, lines, -1, -1)
-    local k = find_smallest_node(l)
 end
 
 return M
