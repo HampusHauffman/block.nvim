@@ -58,4 +58,4 @@ My hope is it will help with legibility in deeply nested code.
 This is an example of manually set colors.
 
 ### Contribution
-I will try to fix any issues found and welcome any PR for improvment of the plugin!
+Currently development has been put on hold while i switch jobs. I'll still look at any PR's coming in. I know there is some performance issues that i intend to fix in the future but i do not have time ATM.
