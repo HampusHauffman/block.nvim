@@ -39,6 +39,7 @@ end
 local function convert_ts_node(ts_node, color, lines, prev_start_row, prev_start_col, parent)
     local start_row, start_col, end_row, _ = ts_node:range()
     local node_lines = { unpack(lines, start_row + 1, end_row + 1) }
+
     local max_col = find_biggest_end_col(node_lines)
     local mts_node = {
         children = {},
@@ -136,12 +137,12 @@ local function update(bufnr, changed)
     local win_start_row = vim.fn.line("w0", win_id)
     local win_end_row = vim.fn.line("w$", win_id)
 
-    print(win_start_row, win_end_row)
-
     local lang_tree = buffers[bufnr].parser
     local trees = lang_tree:tree_for_range({ win_start_row, 0, win_end_row, 0 })
     if trees == nil then return end -- Seems an already Blocked buffer might result in this returning nil
     local ts_node = trees:root()
+
+
     if changed then
         local lines = vim.api.nvim_buf_get_lines(bufnr, 0, -1, true)
         vim.api.nvim_buf_clear_namespace(0, ns_id, win_start_row, win_end_row)
@@ -175,7 +176,7 @@ local function add_buff_and_start(bufnr)
                 group = 'block.nvim',
                 pattern = string.format('<buffer=%d>', bufnr),
                 callback = function(_)
-                    --if buffers[bufnr].prev_left_col == vim.fn.winsaveview().leftcol then return end -- This is in order to not update unless horizontal scrolled
+                    if buffers[bufnr].prev_left_col == vim.fn.winsaveview().leftcol then return end -- This is in order to not update unless horizontal scrolled
                     buffers[bufnr].prev_left_col = vim.fn.winsaveview().leftcol
                     update(bufnr, false)
                 end
@@ -209,6 +210,49 @@ function M.toggle()
     else
         M.on()
     end
+end
+
+function M.ff()
+    -- get lang of current file
+    local bufnr = api.nvim_get_current_buf()
+    local parser = ts.get_parser()
+    local query = ts.query.get(parser:lang(), "indents")
+    local trees = parser:tree_for_range({ 0, 0, -1, 0 })
+
+    if trees == nil or query == nil then return end -- Seems an already Blocked buffer might result in this returning nil
+
+    local root = trees:root()
+
+    local lines = vim.api.nvim_buf_get_lines(bufnr, 0, -1, true)
+
+    local linelength = {}
+    for i, line in ipairs(lines) do
+        linelength[i] = vim.fn.strdisplaywidth(line)
+    end
+    print(vim.inspect(linelength))
+
+    local q = {}
+    local d = 0
+
+    for id, node, metadata in query:iter_captures(root, bufnr, 0, -1) do
+        if query then
+            local start_row, start_col, end_row, _ = node:range()
+            local c = query.captures[id]
+            local s = node:start()
+            local e = node:end_()
+            if c == "indent.end" then d = d - 1 end
+            if c == "indent.begin" then
+                d = d + 1
+                if s ~= e and not q[s] then
+                    q[s] = {}
+                    q[s].start = s
+                    q[s].end_ = e
+                    q[s].depth = d
+                end
+            end
+        end
+    end
+    print(vim.inspect(q))
 end
 
 return M
