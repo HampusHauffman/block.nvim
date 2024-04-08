@@ -1,12 +1,10 @@
-local M = {}
+local M           = {}
 
-
-
---- @type table<integer,{parser:LanguageTree,scroll: integer, prev_left_col: integer}>
+--- @type table<integer,{parser:LanguageTree}>
 local buffers     = {}
 local api         = vim.api
 local ts          = vim.treesitter
-local ns_id       = vim.api.nvim_create_namespace('bloc')
+local ns_id       = vim.api.nvim_create_namespace('block')
 local nest_amount = require("block").options.depth
 
 ---@param lines string[]
@@ -41,6 +39,7 @@ local function color_node(start_row, start_col, end_row, end_col, iteration)
                 priority = 200 + iteration
             })
         else
+            -- Highlight the empty lines
             api.nvim_buf_set_extmark(0, ns_id, i, 0, {
                 virt_text = {
                     { string.rep(" ", end_col - start_col),
@@ -49,8 +48,6 @@ local function color_node(start_row, start_col, end_row, end_col, iteration)
                 priority = 200 + iteration
             })
         end
-
-        -- Highlight the empty lines
 
         ::continue::
     end
@@ -104,27 +101,50 @@ local function block(node, iteration, prev_start_row, prev_start_col, prev_end_r
     end
 
     -- print all the data for the node: Start, End, and width (end col)
-    print(string.format("start_row: %d, start_col %d, largest_end_col %d, end_row: %d, iteration: %d, type: %s",
-        start_row,
-        start_col, largest_col, end_row, iteration, node:type()))
+    -- print(string.format("start_row: %d, start_col %d, largest_end_col %d, end_row: %d, iteration: %d, type: %s", start_row, start_col, largest_col, end_row, iteration, node:type()))
 
     color_node(start_row, start_col, end_row, largest_col, iteration)
     return largest_col + 1
+end
+
+---@param bufnr integer
+local function update(bufnr)
+    --unfortunate bug. It seems register_cbs({}) wont unregister callbacks in v > 10 so this just checks that. no performace degredation should occur.
+    if buffers[bufnr] == nil then return end
+
+    local lang_tree = buffers[bufnr].parser
+    local trees = lang_tree:trees()
+    if #trees == 0 then return end -- Seems an already Blocked buffer might result in this returning nil-- Seems an already Blocked buffer might result in this returning nil
+    local ts_node = trees[1]:root()
+
+    vim.api.nvim_buf_clear_namespace(0, ns_id, 0, -1)
+    for c in ts_node:iter_children() do
+        block(c, nest_amount + 1, -1, -1, -1)
+    end
 end
 
 ---Update the parser for a buffer.
 local function add_buff_and_start(bufnr)
     local success, parser = pcall(ts.get_parser, bufnr)
     if (success) then
-        local trees = parser:trees()[1]
-        local rootNode = trees:root()
+        buffers[bufnr] = {}
+        buffers[bufnr].parser = parser
+
+        vim.schedule(function()
+            update(bufnr)
+        end)
+        parser:register_cbs({
+            on_changedtree = function()
+                vim.schedule(function()
+                    update(bufnr)
+                end)
+            end
+        }, false)
 
         -- We dont care about coloring the root node since thats the entire buffer
-        for c in rootNode:iter_children() do
-            block(c, nest_amount + 1, -1, -1, -1)
-        end
     end
 end
+
 
 function M.on()
     local bufnr = api.nvim_get_current_buf()
@@ -139,7 +159,6 @@ function M.off()
     vim.api.nvim_buf_clear_namespace(bufnr, ns_id, 0, -1)
     if buffers[bufnr] then
         buffers[bufnr].parser:register_cbs({ on_changedtree = function() end }) -- Register an empty function to remove the previous callback
-        api.nvim_del_autocmd(buffers[bufnr].scroll)
         buffers[bufnr] = nil
     end
 end
