@@ -21,7 +21,7 @@ local function darken_hex_color(hex_color, percent)
 end
 
 function M.hl(i, c)
-    vim.cmd('highlight Bloc' .. i .. ' guibg=' .. c)
+    vim.cmd('highlight Block' .. i .. ' guibg=' .. c)
 end
 
 function M.get_bg_color()
