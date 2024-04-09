@@ -24,7 +24,6 @@ end
 local function color_node(start_row, start_col, end_row, end_col, iteration)
     for i = start_row, end_row do
         api.nvim_buf_add_highlight(0, ns_id, "Block" .. iteration % nest_amount, i, start_col, end_col)
-
         -- Highlight that comes after the end of the line
         local l = vim.api.nvim_buf_get_lines(0, i, i + 1, false)[1]
         if (l == nil) then goto continue end -- AH YES THE FORBIDDEN FRUIT TODO fix this. Seems
@@ -107,6 +106,7 @@ local function block(node, iteration, prev_start_row, prev_start_col, prev_end_r
     return largest_col + 1
 end
 
+
 ---@param bufnr integer
 local function update(bufnr)
     --unfortunate bug. It seems register_cbs({}) wont unregister callbacks in v > 10 so this just checks that. no performace degredation should occur.
@@ -133,13 +133,24 @@ local function add_buff_and_start(bufnr)
         vim.schedule(function()
             update(bufnr)
         end)
-        parser:register_cbs({
-            on_changedtree = function()
+
+        -- Autocommand that checks the
+
+        api.nvim_buf_attach(bufnr, false, {
+            on_lines = function(lines, buff_handle, changed_tick, first_line, last_line)
                 vim.schedule(function()
                     update(bufnr)
                 end)
             end
-        }, false)
+        })
+
+        --        parser:register_cbs({
+        --            on_changedtree = function()
+        --                vim.schedule(function()
+        --                    update(bufnr)
+        --                end)
+        --            end
+        --        }, false)
 
         -- We dont care about coloring the root node since thats the entire buffer
     end
