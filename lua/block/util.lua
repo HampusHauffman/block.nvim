@@ -10,6 +10,7 @@ local function darken_hex_color(hex_color, percent)
     local g = tonumber(hex_color:sub(3, 4), 16)
     local b = tonumber(hex_color:sub(5, 6), 16)
 
+
     r = math.floor(r * percent)
     g = math.floor(g * percent)
     b = math.floor(b * percent)

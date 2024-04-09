@@ -22,6 +22,11 @@ Neovim Stable release and up (Have not tested how far back this works).
 },
 ```
 ## ⚙️ Configuration / Setup
+This plugin only works with:
+```lua
+vim.opt.wrap = true
+```
+
 To change the defaults you can change any of the following values: 
 ```lua
 ---@field percent number  -- The change in color. 0.8 would change each box to be 20% darker than the last and 1.2 would be 20% brighter.
@@ -52,10 +57,6 @@ My hope is it will help with legibility in deeply nested code.
 * Bug test and fix any community found issues
 * Add vim docs for usage
 * Handle multi character characters such as emojis
-* Potentially add virtual lines as a means to improve visibility even more
 
 ![image](https://user-images.githubusercontent.com/3845743/245100148-f392affa-4d5b-4c46-8bcb-56d9356a53e8.png)
 This is an example of manually set colors.
-
-### Contribution
-Currently development has been put on hold while i switch jobs. I'll still look at any PR's coming in. I know there is some performance issues that i intend to fix in the future but i do not have time ATM.

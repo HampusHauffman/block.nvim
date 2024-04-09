@@ -42,7 +42,7 @@ local function color_node(bufnr, start_row, start_col, end_row, end_col, iterati
             -- Highlight the empty lines
             api.nvim_buf_set_extmark(bufnr, ns_id, i, 0, {
                 virt_text = {
-                    { string.rep(" ", end_col - start_col),
+                    { string.rep(" ", end_col - start_col * buffers[bufnr].tabstop),
                         "Block" .. iteration % nest_amount } },
                 virt_text_win_col = start_col * buffers[bufnr].tabstop,
                 priority = 100 + iteration
@@ -145,12 +145,11 @@ local function add_buff_and_start(bufnr)
         buffers[bufnr].matchpairs = vim.bo[bufnr].matchpairs
         vim.bo[bufnr].matchpairs = ""
 
-        -- Initialize the buffer and update it
-        vim.print(buffers[bufnr].tabstop)
+
         vim.schedule(function()
             update(bufnr)
         end)
-        -- Autocommand that checks the
+
         parser:register_cbs({
             on_changedtree = function()
                 vim.schedule(function()
