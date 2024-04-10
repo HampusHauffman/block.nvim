@@ -24,10 +24,12 @@ end
 local function color_node(bufnr, start_row, start_col, end_row, end_col, iteration)
     for i = start_row, end_row do
         api.nvim_buf_add_highlight(bufnr, ns_id, "Block" .. iteration % nest_amount, i, start_col, end_col)
+
         -- Highlight that comes after the end of the line
         local l = vim.api.nvim_buf_get_lines(bufnr, i, i + 1, false)[1]
+        -- AH YES THE FORBIDDEN FRUIT TODO fix this. Seems i only need this to handle a bug of last line status
+        if (l == nil) then goto continue end
         local l_len = vim.fn.strdisplaywidth(l)
-        if (l == nil) then goto continue end -- AH YES THE FORBIDDEN FRUIT TODO fix this. Seems
         if (#l > 0) then
             api.nvim_buf_set_extmark(bufnr, ns_id, i, 0, {
                 virt_text = {
@@ -36,7 +38,7 @@ local function color_node(bufnr, start_row, start_col, end_row, end_col, iterati
                     }
                 },
                 virt_text_win_col = l_len,
-                priority = 100 + iteration,
+                priority = 0 + iteration,
             })
         else
             api.nvim_buf_set_extmark(bufnr, ns_id, i, 0, {
@@ -44,7 +46,7 @@ local function color_node(bufnr, start_row, start_col, end_row, end_col, iterati
                     { string.rep(" ", end_col - start_col * buffers[bufnr].tabstop),
                         "Block" .. iteration % nest_amount } },
                 virt_text_win_col = start_col * buffers[bufnr].tabstop,
-                priority = 100 + iteration,
+                priority = 0 + iteration,
 
             })
         end
