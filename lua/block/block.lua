@@ -158,13 +158,20 @@ local function add_buff_and_start()
 
             update(bufnr)
 
-            parser:register_cbs({
-                on_changedtree = function()
+            api.nvim_buf_attach(bufnr, false, {
+                on_lines = function()
+                    update(bufnr)
                     vim.schedule(function()
-                        update(bufnr)
                     end)
                 end
-            }, false)
+            })
+            --            parser:register_cbs({
+            --                on_changedtree = function()
+            --                    vim.schedule(function()
+            --                        update(bufnr)
+            --                    end)
+            --                end
+            --            }, false)
         end
     end)
 end
