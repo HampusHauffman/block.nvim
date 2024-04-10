@@ -45,6 +45,7 @@ local function color_node(bufnr, start_row, start_col, end_row, end_col, iterati
                         "Block" .. iteration % nest_amount } },
                 virt_text_win_col = start_col * buffers[bufnr].tabstop,
                 priority = 100 + iteration,
+
             })
         end
 
@@ -125,13 +126,22 @@ local function update(bufnr)
 end
 
 ---Update the parser for a buffer.
-local function add_buff_and_start(bufnr)
-    local success, parser = pcall(ts.get_parser, bufnr)
-    if (success) then
-        buffers[bufnr] = {}
-        buffers[bufnr].parser = parser
+local function add_buff_and_start()
+    -- Wait untill neovim is ready
+    vim.schedule(function()
+        -- Get the buffer
+        local bufnr = api.nvim_get_current_buf()
 
-        vim.schedule(function()
+        -- Add the buffer to buffers
+        if not buffers[bufnr] then
+            buffers[bufnr] = {}
+        end
+
+        -- Get a parser if exists
+        local success, parser = pcall(ts.get_parser, bufnr)
+        if success then
+            buffers[bufnr].parser = parser
+
             -- set matchpairs to empty string to avoid conflicts with treesitter
             buffers[bufnr].matchpairs = vim.bo[bufnr].matchpairs
             vim.bo[bufnr].matchpairs = ""
@@ -145,25 +155,22 @@ local function add_buff_and_start(bufnr)
             buffers[bufnr].tabstop = a
 
             update(bufnr)
-        end)
 
-        parser:register_cbs({
-            on_changedtree = function()
-                vim.schedule(function()
-                    update(bufnr)
-                end)
-            end
-        }, false)
-    end
+            parser:register_cbs({
+                on_changedtree = function()
+                    vim.schedule(function()
+                        update(bufnr)
+                    end)
+                end
+            }, false)
+        end
+    end)
 end
 
 
 function M.on()
-    local bufnr = api.nvim_get_current_buf()
     -- If the buffer isnt in the list of buffers then add it and run
-    if not buffers[bufnr] then
-        add_buff_and_start(bufnr)
-    end
+    add_buff_and_start()
 end
 
 function M.off()
