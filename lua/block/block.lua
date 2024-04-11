@@ -1,6 +1,8 @@
-local M           = {}
+local M = {}
+
 
 --- @type table<integer,{parser:LanguageTree, tabstop: integer, matchpairs: string, change_tick: integer}>
+
 local buffers     = {}
 local api         = vim.api
 local ts          = vim.treesitter
@@ -38,7 +40,7 @@ local function color_node(bufnr, start_row, start_col, end_row, end_col, iterati
 					}
 				},
 				virt_text_win_col = l_len,
-				priority = 0 + iteration,
+				priority = 100 + iteration,
 			})
 		else
 			api.nvim_buf_set_extmark(bufnr, ns_id, i, 0, {
@@ -46,7 +48,7 @@ local function color_node(bufnr, start_row, start_col, end_row, end_col, iterati
 					{ string.rep(" ", end_col - start_col * buffers[bufnr].tabstop),
 						"Block" .. iteration % nest_amount } },
 				virt_text_win_col = start_col * buffers[bufnr].tabstop,
-				priority = 0 + iteration,
+				priority = 100 + iteration,
 
 			})
 		end
@@ -75,7 +77,7 @@ local function block(bufnr, node, iteration, prev_start_row, prev_start_col, pre
 	local same_start_row = start_row == prev_start_row
 	local same_start_col = start_col == prev_start_col
 	local same_end_row = end_row == prev_end_row
-	local start_and_end_col_dont_match = start_col - end_col > 2
+	local start_and_end_col_dont_match = start_col - end_col > 1
 	if unwanted_types or same_start_row or same_start_col or same_end_row or start_and_end_col_dont_match then
 		iteration = iteration - 1
 		start_row = prev_start_row
@@ -85,6 +87,7 @@ local function block(bufnr, node, iteration, prev_start_row, prev_start_col, pre
 
 	-- Get all the lines for node
 	local lines = api.nvim_buf_get_lines(bufnr, start_row, end_row, true)
+
 	local longest_line = find_biggest_end_col(lines)
 
 	-- Update longest_col to the biggest out of all children or longest line
@@ -98,7 +101,6 @@ local function block(bufnr, node, iteration, prev_start_row, prev_start_col, pre
 	-- Go into child node unless no children are found
 	for child_node in node:iter_children() do
 		local child_largest_col = block(bufnr, child_node, iteration + 1, start_row, start_col, end_row)
-
 		-- Update largest end col
 		largest_col = math.max(largest_col, child_largest_col)
 	end
@@ -158,24 +160,23 @@ local function add_buff_and_start()
 
 			update(bufnr)
 
-			api.nvim_buf_attach(bufnr, false, {
-				---@diagnostic disable-next-line: unused-local
-				on_lines = function(_, _, change_tick, _first_line, _, _last_line, _, _, _, _)
-					if change_tick ~= buffers[bufnr].change_tick then
-						buffers[bufnr].change_tick = change_tick
-						vim.schedule(function()
-							update(bufnr)
-						end)
-					end
-				end,
-			})
-			--            parser:register_cbs({
-			--                on_changedtree = function()
-			--                    vim.schedule(function()
-			--                        update(bufnr)
-			--                    end)
-			--                end
-			--            }, false)
+			--			api.nvim_buf_attach(bufnr, false, {
+			--				---@diagnostic disable-next-line: unused-local
+			--				on_lines = function(_, _, change_tick, _first_line, _, _last_line, _, _, _, _)
+			--					if change_tick ~= buffers[bufnr].change_tick then
+			--						buffers[bufnr].change_tick = change_tick
+			--						vim.schedule(function()
+			--							update(bufnr)
+			--						end) end
+			--				end,
+			--			})
+			parser:register_cbs({
+				on_changedtree = function()
+					vim.schedule(function()
+						update(bufnr)
+					end)
+				end
+			}, false)
 		end
 	end)
 end
@@ -205,4 +206,7 @@ function M.toggle()
 	end
 end
 
+--						print('Time start:' .. (os.clock()) .. ' seconds.')
+--						update(bufnr)
+--						print('Time taken:' .. (os.clock() - start) .. ' seconds.')
 return M
