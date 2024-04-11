@@ -1,14 +1,23 @@
-local M = {}
-
+local M           = {}
 
 --- @type table<integer,{parser:LanguageTree, tabstop: integer, matchpairs: string, change_tick: integer}>
-
 local buffers     = {}
 local api         = vim.api
 local ts          = vim.treesitter
 local ns_id       = vim.api.nvim_create_namespace('block')
 local nest_amount = require("block").options.depth
 
+
+---@param bufnr integer
+---@return table<integer>
+local function lines_width(bufnr)
+	local lines = api.nvim_buf_get_lines(bufnr, 0, -1, true)
+	local lines_with_width = {}
+	for i, v in ipairs(lines) do
+		lines_with_width[i] = vim.fn.strdisplaywidth(v)
+	end
+	return lines_with_width
+end
 ---@param lines string[]
 local function find_biggest_end_col(lines)
 	local max = 0
@@ -64,8 +73,9 @@ end
 ---@param prev_start_row integer
 ---@param prev_start_col integer
 ---@param prev_end_row integer
+---@param lines table<integer> an array of each lines width 1 based
 ---@return integer largest_col
-local function block(bufnr, node, iteration, prev_start_row, prev_start_col, prev_end_row)
+local function block(bufnr, node, iteration, prev_start_row, prev_start_col, prev_end_row, lines)
 	-- The largest col nr
 	local largest_col = 0
 
@@ -85,10 +95,9 @@ local function block(bufnr, node, iteration, prev_start_row, prev_start_col, pre
 		end_row = prev_end_row
 	end
 
-	-- Get all the lines for node
-	local lines = api.nvim_buf_get_lines(bufnr, start_row, end_row, true)
-
-	local longest_line = find_biggest_end_col(lines)
+	-- Get the biggest end col from the lines by taking the segment from start_row to end row and getting the max
+	local node_lines = unpack(lines, start_row + 1, end_row + 1)
+	local longest_line = math.max(node_lines)
 
 	-- Update longest_col to the biggest out of all children or longest line
 	largest_col = math.max(largest_col, longest_line)
@@ -100,7 +109,7 @@ local function block(bufnr, node, iteration, prev_start_row, prev_start_col, pre
 
 	-- Go into child node unless no children are found
 	for child_node in node:iter_children() do
-		local child_largest_col = block(bufnr, child_node, iteration + 1, start_row, start_col, end_row)
+		local child_largest_col = block(bufnr, child_node, iteration + 1, start_row, start_col, end_row, lines)
 		-- Update largest end col
 		largest_col = math.max(largest_col, child_largest_col)
 	end
@@ -123,9 +132,12 @@ local function update(bufnr)
 	if #trees == 0 then return end -- Seems an already Blocked buffer might result in this returning nil-- Seems an already Blocked buffer might result in this returning nil
 	local ts_node = trees[1]:root()
 
+	-- Get all the lines for node
+	local lines = lines_width(bufnr)
+
 	vim.api.nvim_buf_clear_namespace(bufnr, ns_id, 0, -1)
 	for c in ts_node:iter_children() do
-		block(bufnr, c, nest_amount + 1, -1, -1, -1)
+		block(bufnr, c, nest_amount + 1, -1, -1, -1, lines)
 	end
 end
 
