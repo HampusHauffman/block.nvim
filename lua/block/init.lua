@@ -1,57 +1,71 @@
 local M = {}
+
+local core = require("block.block")
 local util = require("block.util")
----@class Opts
----@field percent number  -- The change in color. 0.8 would change each box to be 20% darker than the last and 1.2 would be 20% brighter.
----@field depth number -- De depths of changing colors. Defaults to 4. After this the colors reset. Note that the first color is taken from your "Normal" highlight so a 4 is 3 new colors.
----@field automatic boolean -- Automatically turns this on when treesitter finds a parser for the current file.
----@field colors string [] | nil -- A list of colors to use instead. If this is set percent and depth are not taken into account.
----@field bg string? -- Set this if block.nvim cannot automatically find your background color. (Relevant if you use transparent colors)
 
+--- @class BlockOpts
+--- @field percent number # Brightness multiplier per depth level (e.g., 0.8 = darker)
+--- @field depth number # Number of nested highlight levels to generate
+--- @field automatic boolean # Whether to enable the plugin automatically on file open
+--- @field colors? string[] # Optional custom colors for highlights; overrides percent/depth
+--- @field bg? string # Optional override for background color (hex)
 
-M.options = {
-    percent = 0.8,
-    depth = 4,
-    automatic = false,
+--- @type BlockOpts
+local defaults = {
+  percent = 0.8,
+  depth = 4,
+  automatic = false,
+  colors = nil,
+  bg = nil,
 }
 
----@param opts Opts
+--- Stores merged configuration after setup
+--- @type BlockOpts
+M.options = vim.deepcopy(defaults)
+
+--- Setup the plugin
+--- @param opts BlockOpts?
 function M.setup(opts)
-    vim.api.nvim_create_augroup('block.nvim', {})
+  -- Merge user options with defaults
+  M.options = vim.tbl_deep_extend("force", defaults, opts or {}) --[[@as BlockOpts]]
 
-    M.options = vim.tbl_deep_extend("force", M.options, opts or {})
-    if M.options.colors then
-        M.options.depth = #M.options.colors
-        for i, c in ipairs(M.options.colors) do
-            util.hl(i - 1, c)
-        end
-    else
-        vim.defer_fn(function() -- Getting the hl before vim loads throws an error
-            local bg_color = M.options.bg or util.get_bg_color()
-            if bg_color then
-                util.create_highlights_from_depth(M.options.depth, M.options.percent, bg_color)
-            else
-                vim.notify_once("block.nvim could not find your background color.\n", vim.log.levels.ERROR)
-            end
-        end, 0)
+  -- Create or clear the plugin's autocmd group
+  vim.api.nvim_create_augroup("block.nvim", { clear = true })
+
+  -- If custom colors are given, use them directly and skip color generation
+  if M.options.colors then
+    M.options.depth = #M.options.colors
+    for i, color in ipairs(M.options.colors) do
+      util.hl(i - 1, color)
     end
+  else
+    -- Defer highlight generation until UI is ready
+    vim.defer_fn(function()
+      local bg = M.options.bg or util.get_bg_color()
+      if not bg then
+        vim.notify_once(
+          "block.nvim: Could not detect background color.",
+          vim.log.levels.ERROR
+        )
+        return
+      end
+      util.create_highlights_from_depth(M.options.depth, M.options.percent, bg)
+    end, 0)
+  end
 
-    if M.options.automatic then
-        vim.api.nvim_create_autocmd('FileType', {
-            group = 'block.nvim',
-            pattern = '*',
-            callback = function(args)
-                require("block").on()
-            end
-        })
-    end
+  -- Auto-enable the plugin on supported filetypes if 'automatic' is true
+  if M.options.automatic then
+    vim.api.nvim_create_autocmd("FileType", {
+      group = "block.nvim",
+      pattern = "*",
+      callback = function()
+        core.enable()
+      end,
+    })
+  end
 
-    vim.api.nvim_create_user_command('Block', require("block").toggle, {})
-    vim.api.nvim_create_user_command('BlockOn', require("block").on, {})
-    vim.api.nvim_create_user_command('BlockOff', require("block").off, {})
+  -- Add a user command to enable the plugin manually
+  vim.api.nvim_create_user_command("BlockOn", core.enable, {})
 end
 
-return setmetatable(M, {
-    __index = function(_, k)
-        return require("block.block")[k]
-    end,
-})
+return M
