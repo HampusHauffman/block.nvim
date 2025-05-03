@@ -9,10 +9,8 @@
 
 local M = {}
 
---- Whether block highlighting is currently enabled
 M.enabled = true
 
---- Default configuration
 local defaults = {
   indent = {
     priority = 1,
@@ -43,9 +41,7 @@ local function get_block_hl(indent, shiftwidth)
 end
 
 local function get_indent_blocks(lines, top)
-  ---@type BlockRange[]
   local stack = {}
-  ---@type BlockRange[]
   local blocks = {}
 
   for i, line in ipairs(lines) do
@@ -68,7 +64,6 @@ local function get_indent_blocks(lines, top)
       })
     end
 
-    -- Always update max_col for all open blocks
     for _, b in ipairs(stack) do
       b.max_col = math.max(b.max_col, line_len)
     end
@@ -87,6 +82,39 @@ local function compute_all_blocks(buf)
   block_cache[buf] = get_indent_blocks(lines, 0)
 end
 
+local function set_virtual_highlight(
+  buf,
+  lnum,
+  col,
+  padding_len,
+  indent,
+  shiftwidth,
+  hl_base
+)
+  if padding_len <= 0 then
+    return
+  end
+
+  local priority = config.indent.priority + math.floor(indent / shiftwidth)
+  local hl = hl_base or get_block_hl(indent, shiftwidth)
+  local filler = string.rep(" ", padding_len)
+
+  -- If the line is blank, simulate indentation by prefixing the filler with spaces
+  if vim.fn.getline(lnum + 1):match("^%s*$") then
+    col = 0
+    filler = string.rep(" ", indent) .. filler
+  end
+
+  vim.api.nvim_buf_set_extmark(buf, ns, lnum, col, {
+    virt_text = { { filler, hl } },
+    virt_text_pos = "overlay",
+    hl_mode = "combine",
+    ephemeral = true,
+    priority = priority,
+    strict = false, -- allow past-EOL placement
+  })
+end
+
 local function draw_blocks(_, buf, top, bottom)
   local shiftwidth = vim.bo[buf].shiftwidth > 0 and vim.bo[buf].shiftwidth
     or vim.bo[buf].tabstop
@@ -97,7 +125,7 @@ local function draw_blocks(_, buf, top, bottom)
 
   vim.api.nvim_buf_call(buf, function()
     table.sort(blocks, function(a, b)
-      return a.indent < b.indent
+      return a.indent > b.indent
     end)
 
     for _, block in ipairs(blocks) do
@@ -106,13 +134,13 @@ local function draw_blocks(_, buf, top, bottom)
       local hl = get_block_hl(block.indent, shiftwidth)
       local priority = config.indent.priority
         + math.floor(block.indent / shiftwidth)
-      local max_len = block.max_col
 
       for lnum = start, stop do
         local line = vim.fn.getline(lnum + 1)
         local line_len = #line
+        local virt_start = math.max(block.indent, line_len)
+        local padding_len = block.max_col - virt_start
 
-        -- 1. Highlight actual text, if present
         if line_len > block.indent then
           vim.api.nvim_buf_set_extmark(buf, ns, lnum, block.indent, {
             end_col = line_len,
@@ -120,23 +148,20 @@ local function draw_blocks(_, buf, top, bottom)
             hl_mode = "combine",
             ephemeral = true,
             priority = priority,
+            strict = false,
           })
         end
 
-        -- 2. Add virtual padding to reach max_col
-        local virt_start = math.max(block.indent, line_len)
-        if virt_start < max_len then
-          local padding = string.rep(" ", max_len - virt_start)
-          vim.api.nvim_buf_set_extmark(buf, ns, lnum, virt_start, {
-            virt_text = {
-              { padding, hl },
-            },
-            virt_text_pos = "overlay",
-            hl_mode = "combine",
-            ephemeral = true,
-            priority = priority,
-          })
-        end
+        local col = line:match("^%s*$") and block.indent or virt_start
+        set_virtual_highlight(
+          buf,
+          lnum,
+          col,
+          padding_len,
+          block.indent,
+          shiftwidth,
+          hl
+        )
       end
     end
   end)
@@ -190,40 +215,29 @@ function M.disable()
   vim.api.nvim_set_decoration_provider(ns, {})
 end
 
-vim.api.nvim_create_user_command("BlockShowBlocks", function()
+vim.api.nvim_create_user_command("BlockTestVirtText", function()
   local buf = vim.api.nvim_get_current_buf()
-  local blocks = block_cache[buf]
-  if not blocks then
-    vim.notify("No blocks cached for this buffer.", vim.log.levels.WARN)
-    return
-  end
+  local ns = vim.api.nvim_create_namespace("block-test")
+  local lnum = 0 -- top line of the buffer
+  local indent = 6
+  local padding_len = 20
+  local filler = string.rep("a", padding_len)
+  local hl = "Block1"
+  local priority = 1000
 
-  local lines = {}
-  table.insert(lines, ("Total blocks: %d"):format(#blocks))
-  table.insert(lines, "Idx  Start  Stop  Indent  MaxCol")
-  table.insert(lines, "---- ------ ----- ------- -------")
+  -- Make sure the line exists and is empty
+  vim.api.nvim_buf_set_lines(buf, lnum, lnum + 1, false, { "" })
 
-  for i, b in ipairs(blocks) do
-    table.insert(
-      lines,
-      ("%3d  %5d  %4d  %6d  %6d"):format(
-        i,
-        b.start,
-        b.stop,
-        b.indent,
-        b.max_col
-      )
-    )
-  end
+  -- Place virt_text at indent
+  vim.api.nvim_buf_set_extmark(buf, ns, lnum, indent, {
+    virt_text = { { filler, hl } },
+    virt_text_pos = "overlay",
+    hl_mode = "combine",
+    ephemeral = false,
+    priority = priority,
+    strict = false,
+  })
 
-  -- Create a scratch buffer and show it
-  local out_buf = vim.api.nvim_create_buf(false, true)
-  vim.api.nvim_buf_set_lines(out_buf, 0, -1, false, lines)
-  vim.api.nvim_set_option_value("filetype", "blockdebug", { buf = out_buf })
-  vim.api.nvim_set_option_value("modifiable", false, { buf = out_buf })
-
-  vim.cmd.vsplit()
-  vim.api.nvim_win_set_buf(0, out_buf)
+  vim.notify("Placed test virt_text at indent " .. indent)
 end, {})
-
 return M
