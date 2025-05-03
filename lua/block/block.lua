@@ -97,21 +97,26 @@ local function set_virtual_highlight(
 
   local priority = config.indent.priority + math.floor(indent / shiftwidth)
   local hl = hl_base or get_block_hl(indent, shiftwidth)
-  local filler = string.rep(" ", padding_len)
 
-  -- If the line is blank, simulate indentation by prefixing the filler with spaces
+  local virt_chunks = {}
+
   if vim.fn.getline(lnum + 1):match("^%s*$") then
+    -- Blank line: simulate indent with unhighlighted padding
+    table.insert(virt_chunks, { string.rep(" ", indent), nil }) -- no HL
+    table.insert(virt_chunks, { string.rep(" ", padding_len), hl })
     col = 0
-    filler = string.rep(" ", indent) .. filler
+  else
+    -- Normal line: draw filler at actual col
+    table.insert(virt_chunks, { string.rep(" ", padding_len), hl })
   end
 
   vim.api.nvim_buf_set_extmark(buf, ns, lnum, col, {
-    virt_text = { { filler, hl } },
+    virt_text = virt_chunks,
     virt_text_pos = "overlay",
     hl_mode = "combine",
     ephemeral = true,
     priority = priority,
-    strict = false, -- allow past-EOL placement
+    strict = false,
   })
 end
 
