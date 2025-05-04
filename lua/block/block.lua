@@ -1,3 +1,5 @@
+local M = {}
+
 --- @class BlockIndentConfig
 --- @field priority integer
 --- @field enabled boolean
@@ -6,8 +8,6 @@
 --- @class BlockConfig
 --- @field indent BlockIndentConfig
 --- @field filter fun(buf: integer): boolean
-
-local M = {}
 
 M.enabled = true
 
@@ -36,48 +36,52 @@ local ns = vim.api.nvim_create_namespace("block")
 local block_cache = {} --- @type table<integer, BlockRange[]>
 
 local function get_block_hl(indent, shiftwidth)
-  local level = math.floor(indent / shiftwidth)
-  return "Block" .. (level % 4)
+  local level_index = math.floor(indent / shiftwidth) % 4
+  return "Block" .. level_index
 end
 
 local function get_indent_blocks(lines, top)
   local stack = {}
-  local blocks = {}
+  local result = {}
 
   for i, line in ipairs(lines) do
     local lnum = top + i - 1
     local indent = vim.fn.indent(lnum + 1)
-    local line_len = #line
+    local len = #line
 
     if not line:match("^%s*$") then
       while #stack > 0 and indent < stack[#stack].indent do
-        local closed = table.remove(stack)
-        closed.stop = lnum - 1
-        table.insert(blocks, closed)
+        local block = table.remove(stack)
+        block.stop = lnum - 1
+        table.insert(result, block)
       end
 
       table.insert(stack, {
         start = lnum,
         stop = lnum,
         indent = indent,
-        max_col = line_len,
+        max_col = len,
       })
     end
 
-    for _, b in ipairs(stack) do
-      b.max_col = math.max(b.max_col, line_len)
+    for _, block in ipairs(stack) do
+      block.max_col = math.max(block.max_col, len)
     end
   end
 
-  for _, b in ipairs(stack) do
-    b.stop = top + #lines - 1
-    table.insert(blocks, b)
+  for _, block in ipairs(stack) do
+    block.stop = top + #lines - 1
+    table.insert(result, block)
   end
 
-  return blocks
+  return result
 end
 
 local function compute_all_blocks(buf)
+  if not vim.api.nvim_buf_is_valid(buf) then
+    return
+  end
+
   local lines = vim.api.nvim_buf_get_lines(buf, 0, -1, false)
   block_cache[buf] = get_indent_blocks(lines, 0)
 end
@@ -95,24 +99,24 @@ local function set_virtual_highlight(
     return
   end
 
-  local priority = config.indent.priority + math.floor(indent / shiftwidth)
+  local line = vim.fn.getline(lnum + 1)
+  local is_blank = line:match("^%s*$")
+
   local hl = hl_base or get_block_hl(indent, shiftwidth)
+  local priority = config.indent.priority + math.floor(indent / shiftwidth)
 
-  local virt_chunks = {}
+  local virt_text = {}
 
-  if vim.fn.getline(lnum + 1):match("^%s*$") then
-    -- Blank line: simulate indent with unhighlighted padding
-    table.insert(virt_chunks, { string.rep(" ", indent), nil }) -- no HL
-    table.insert(virt_chunks, { string.rep(" ", padding_len), hl })
+  if is_blank then
     col = 0
+    table.insert(virt_text, { string.rep(" ", indent), nil })
+    table.insert(virt_text, { string.rep(" ", padding_len), hl })
   else
-    -- Normal line: draw filler at actual col
-    table.insert(virt_chunks, { string.rep(" ", padding_len), hl })
+    table.insert(virt_text, { string.rep(" ", padding_len), hl })
   end
 
   vim.api.nvim_buf_set_extmark(buf, ns, lnum, col, {
-    virt_text = virt_chunks,
-
+    virt_text = virt_text,
     virt_text_pos = "overlay",
     hl_mode = "combine",
     ephemeral = true,
@@ -135,20 +139,20 @@ local function draw_blocks(_, buf, top, bottom)
     end)
 
     for _, block in ipairs(blocks) do
-      local start = math.max(block.start, top)
-      local stop = math.min(block.stop, bottom - 1)
+      local start_lnum = math.max(block.start, top)
+      local stop_lnum = math.min(block.stop, bottom - 1)
       local hl = get_block_hl(block.indent, shiftwidth)
       local priority = config.indent.priority
         + math.floor(block.indent / shiftwidth)
 
-      for lnum = start, stop do
+      for lnum = start_lnum, stop_lnum do
         local line = vim.fn.getline(lnum + 1)
         local line_len = #line
         local virt_start = math.max(block.indent, line_len)
         local padding_len = block.max_col - virt_start
 
+        -- Highlight the actual content range if it exists
         if line_len > block.indent then
-          -- Normal text line: highlight real characters
           vim.api.nvim_buf_set_extmark(buf, ns, lnum, block.indent, {
             end_col = line_len,
             hl_group = hl,
@@ -159,53 +163,17 @@ local function draw_blocks(_, buf, top, bottom)
           })
         end
 
-        if line == "" then
-          -- Empty line: simulate indent and padding
-          set_virtual_highlight(
-            buf,
-            lnum,
-            0,
-            padding_len,
-            block.indent,
-            shiftwidth,
-            hl
-          )
-        elseif line:match("^%s+$") then
-          -- Line contains only spaces: highlight existing and pad if needed
-          if block.max_col > block.indent then
-            vim.api.nvim_buf_set_extmark(buf, ns, lnum, block.indent, {
-              end_col = block.max_col,
-              hl_group = hl,
-              hl_mode = "combine",
-              ephemeral = true,
-              priority = priority,
-              strict = false,
-            })
-          end
-
-          if padding_len > 0 then
-            set_virtual_highlight(
-              buf,
-              lnum,
-              block.max_col,
-              padding_len,
-              block.indent,
-              shiftwidth,
-              hl
-            )
-          end
-        else
-          -- Normal line with code
-          set_virtual_highlight(
-            buf,
-            lnum,
-            virt_start,
-            padding_len,
-            block.indent,
-            shiftwidth,
-            hl
-          )
-        end
+        -- Virtual highlight to visually fill space to max_col
+        local virt_col = line:match("^%s*$") and block.indent or virt_start
+        set_virtual_highlight(
+          buf,
+          lnum,
+          virt_col,
+          padding_len,
+          block.indent,
+          shiftwidth,
+          hl
+        )
       end
     end
   end)
