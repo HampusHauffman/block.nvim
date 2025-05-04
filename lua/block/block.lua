@@ -112,6 +112,7 @@ local function set_virtual_highlight(
 
   vim.api.nvim_buf_set_extmark(buf, ns, lnum, col, {
     virt_text = virt_chunks,
+
     virt_text_pos = "overlay",
     hl_mode = "combine",
     ephemeral = true,
@@ -147,6 +148,7 @@ local function draw_blocks(_, buf, top, bottom)
         local padding_len = block.max_col - virt_start
 
         if line_len > block.indent then
+          -- Normal text line: highlight real characters
           vim.api.nvim_buf_set_extmark(buf, ns, lnum, block.indent, {
             end_col = line_len,
             hl_group = hl,
@@ -157,16 +159,53 @@ local function draw_blocks(_, buf, top, bottom)
           })
         end
 
-        local col = line:match("^%s*$") and block.indent or virt_start
-        set_virtual_highlight(
-          buf,
-          lnum,
-          col,
-          padding_len,
-          block.indent,
-          shiftwidth,
-          hl
-        )
+        if line == "" then
+          -- Empty line: simulate indent and padding
+          set_virtual_highlight(
+            buf,
+            lnum,
+            0,
+            padding_len,
+            block.indent,
+            shiftwidth,
+            hl
+          )
+        elseif line:match("^%s+$") then
+          -- Line contains only spaces: highlight existing and pad if needed
+          if block.max_col > block.indent then
+            vim.api.nvim_buf_set_extmark(buf, ns, lnum, block.indent, {
+              end_col = block.max_col,
+              hl_group = hl,
+              hl_mode = "combine",
+              ephemeral = true,
+              priority = priority,
+              strict = false,
+            })
+          end
+
+          if padding_len > 0 then
+            set_virtual_highlight(
+              buf,
+              lnum,
+              block.max_col,
+              padding_len,
+              block.indent,
+              shiftwidth,
+              hl
+            )
+          end
+        else
+          -- Normal line with code
+          set_virtual_highlight(
+            buf,
+            lnum,
+            virt_start,
+            padding_len,
+            block.indent,
+            shiftwidth,
+            hl
+          )
+        end
       end
     end
   end)
