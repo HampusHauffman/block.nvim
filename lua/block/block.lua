@@ -47,7 +47,7 @@ local function get_indent_blocks(lines, top)
   for i, line in ipairs(lines) do
     local lnum = top + i - 1
     local indent = vim.fn.indent(lnum + 1)
-    local len = #line
+    local len = vim.fn.strdisplaywidth(line)
 
     if not line:match("^%s*$") then
       while #stack > 0 and indent < stack[#stack].indent do
@@ -84,6 +84,26 @@ local function compute_all_blocks(buf)
 
   local lines = vim.api.nvim_buf_get_lines(buf, 0, -1, false)
   block_cache[buf] = get_indent_blocks(lines, 0)
+end
+
+local function virtcol_to_byte(line, vcol, tabstop)
+  local byte_count = 0
+  local current_vcol = 0
+  -- This is a simple implementation that assumes single-byte characters for non-tabs.
+  -- It may not be accurate for all multi-byte characters (e.g., emojis).
+  for i = 1, #line do
+    if current_vcol >= vcol then
+      return byte_count
+    end
+    local c = line:sub(i, i)
+    if c == "	" then
+      current_vcol = current_vcol + (tabstop - (current_vcol % tabstop))
+    else
+      current_vcol = current_vcol + 1
+    end
+    byte_count = byte_count + 1
+  end
+  return byte_count
 end
 
 local function set_virtual_highlight(
@@ -147,30 +167,25 @@ local function draw_blocks(_, buf, top, bottom)
 
       for lnum = start_lnum, stop_lnum do
         local line = vim.fn.getline(lnum + 1)
-        local expanded = line:gsub("\t", function()
-          -- Count current visual width up to this tab
-          local prefix = line:sub(1, vim.fn.col({ lnum + 1, 0 }) - 1)
-          local width = vim.fn.strdisplaywidth(prefix)
-          local pad = tabstop - (width % tabstop)
-          return string.rep(" ", pad)
-        end)
 
-        local display_len = vim.fn.strdisplaywidth(expanded)
-        local virt_start = math.max(block.indent, display_len)
-        local padding_len = block.max_col - virt_start
-
-        if #line > block.indent then
-          vim.api.nvim_buf_set_extmark(buf, ns, lnum, block.indent, {
+        -- Highlight from block's indent to end of line
+        local start_byte = virtcol_to_byte(line, block.indent, tabstop)
+        if #line > start_byte then
+          vim.api.nvim_buf_set_extmark(buf, ns, lnum, start_byte, {
             end_col = #line,
             hl_group = hl,
-            hl_mode = "combine",
             ephemeral = true,
             priority = priority,
             strict = false,
           })
         end
 
-        local col = line:match("^%s*$") and block.indent or virt_start
+        -- Padding highlight
+        local display_len = vim.fn.strdisplaywidth(line)
+        local virt_start = math.max(block.indent, display_len)
+        local padding_len = block.max_col - virt_start
+        local col = #line
+
         set_virtual_highlight(
           buf,
           lnum,
