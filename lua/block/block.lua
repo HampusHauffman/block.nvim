@@ -40,52 +40,6 @@ local function get_block_hl(indent, shiftwidth)
   return "Block" .. (level % 4)
 end
 
-local function get_indent_blocks(lines, top)
-  local stack = {}
-  local result = {}
-
-  for i, line in ipairs(lines) do
-    local lnum = top + i - 1
-    local indent = vim.fn.indent(lnum + 1)
-    local len = vim.fn.strdisplaywidth(line)
-
-    if not line:match("^%s*$") then
-      while #stack > 0 and indent < stack[#stack].indent do
-        local block = table.remove(stack)
-        block.stop = lnum - 1
-        table.insert(result, block)
-      end
-
-      table.insert(stack, {
-        start = lnum,
-        stop = lnum,
-        indent = indent,
-        max_col = len,
-      })
-    end
-
-    for _, block in ipairs(stack) do
-      block.max_col = math.max(block.max_col, vim.fn.strdisplaywidth(line))
-    end
-  end
-
-  for _, block in ipairs(stack) do
-    block.stop = top + #lines - 1
-    table.insert(result, block)
-  end
-
-  return result
-end
-
-local function compute_all_blocks(buf)
-  if not vim.api.nvim_buf_is_valid(buf) then
-    return
-  end
-
-  local lines = vim.api.nvim_buf_get_lines(buf, 0, -1, false)
-  block_cache[buf] = get_indent_blocks(lines, 0)
-end
-
 local function virtcol_to_byte(line, vcol, tabstop)
   local byte_count = 0
   local current_vcol = 0
@@ -200,14 +154,69 @@ local function draw_blocks(_, buf, top, bottom)
   end)
 end
 
+---@param lines string[]
+local function get_indent_blocks(lines)
+  ---@type BlockRange[]
+  local stack = {}
+  ---@type BlockRange[]
+  local result = {}
+
+  for lnum = 0, #lines - 1 do
+    local line = lines[lnum + 1]
+    local indent = vim.fn.indent(lnum + 1)
+    local len = vim.fn.strdisplaywidth(line)
+
+    -- For lines with content, manage the stack of indentation blocks.
+    -- First, close any blocks that the current line has de-dented from.
+    -- Then, start a new block for the current line's indentation level.
+    if not line:match("^%s*$") then
+      while #stack > 0 and indent < stack[#stack].indent do
+        local block = table.remove(stack)
+        block.stop = lnum - 1
+        table.insert(result, block)
+      end
+
+      table.insert(stack, {
+        start = lnum,
+        stop = lnum,
+        indent = indent,
+        max_col = len,
+      })
+    end
+
+    -- Set the max_col for all blocks in the stack.
+    for _, block in ipairs(stack) do
+      block.max_col = math.max(block.max_col, vim.fn.strdisplaywidth(line))
+    end
+  end
+
+  for _, block in ipairs(stack) do
+    block.stop = #lines - 1
+    table.insert(result, block)
+  end
+
+  return result
+end
+
+local function compute_all_blocks(buf)
+  if
+    not vim.api.nvim_buf_is_valid(buf)
+    and not vim.api.nvim_buf_is_loaded(buf)
+    and not config.filter(buf)
+  then
+    return
+  end
+
+  local lines = vim.api.nvim_buf_get_lines(buf, 0, -1, false)
+  block_cache[buf] = get_indent_blocks(lines)
+end
+
 function M.enable()
   M.enabled = true
   vim.print("block.nvim: enabled")
 
   for _, buf in ipairs(vim.api.nvim_list_bufs()) do
-    if vim.api.nvim_buf_is_loaded(buf) and config.filter(buf) then
-      compute_all_blocks(buf)
-    end
+    compute_all_blocks(buf)
   end
 
   vim.api.nvim_set_decoration_provider(ns, {
@@ -239,9 +248,7 @@ function M.disable()
   vim.print("block.nvim: disabled")
 
   for _, buf in ipairs(vim.api.nvim_list_bufs()) do
-    if vim.api.nvim_buf_is_loaded(buf) then
-      vim.api.nvim_buf_clear_namespace(buf, ns, 0, -1)
-    end
+    vim.api.nvim_buf_clear_namespace(buf, ns, 0, -1)
   end
 
   block_cache = {}
