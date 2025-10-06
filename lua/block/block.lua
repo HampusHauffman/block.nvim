@@ -74,7 +74,7 @@ local function set_virtual_highlight(
   end
 
   local line = vim.fn.getline(lnum + 1)
-  local is_blank = line:match("^%s*$")
+  local is_blank = line == ""
 
   local priority = config.indent.priority + math.floor(indent / shiftwidth)
   local hl = hl_base or get_block_hl(indent, shiftwidth)
@@ -166,16 +166,17 @@ local function get_indent_blocks(lines)
     local indent = vim.fn.indent(lnum + 1)
     local len = vim.fn.strdisplaywidth(line)
 
-    -- For lines with content, manage the stack of indentation blocks.
-    -- First, close any blocks that the current line has de-dented from.
-    -- Then, start a new block for the current line's indentation level.
+    -- Any lines with text
     if not line:match("^%s*$") then
+      -- End any block if indentation is less than last indent
       while #stack > 0 and indent < stack[#stack].indent do
         local block = table.remove(stack)
         block.stop = lnum - 1
+        block.max_col = block.max_col + 1
         table.insert(result, block)
       end
 
+      -- Start a new indentation block
       table.insert(stack, {
         start = lnum,
         stop = lnum,
