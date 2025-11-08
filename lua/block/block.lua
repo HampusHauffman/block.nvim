@@ -142,44 +142,47 @@ local function draw_blocks(_, buf, top, bottom)
     end)
 
     for _, block in ipairs(blocks) do
-      local start_lnum = math.max(block.start, top)
-      local stop_lnum = math.min(block.stop, bottom - 1)
-      local hl = get_block_hl(block.content_indent, shiftwidth)
-      local priority = config.indent.priority
-        + math.floor(block.content_indent / shiftwidth)
+      -- Skip the root block (indentation level 0)
+      if block.content_indent > 0 then
+        local start_lnum = math.max(block.start, top)
+        local stop_lnum = math.min(block.stop, bottom - 1)
+        local hl = get_block_hl(block.content_indent, shiftwidth)
+        local priority = config.indent.priority
+          + math.floor(block.content_indent / shiftwidth)
 
-      for lnum = start_lnum, stop_lnum do
-        local line = vim.fn.getline(lnum + 1)
+        for lnum = start_lnum, stop_lnum do
+          local line = vim.fn.getline(lnum + 1)
 
-        -- Highlight from block's highlight_indent to end of line
-        local start_byte =
-          virtcol_to_byte(line, block.highlight_indent, tabstop)
-        if #line > start_byte then
-          vim.api.nvim_buf_set_extmark(buf, ns, lnum, start_byte, {
-            end_col = #line,
-            hl_group = hl,
-            ephemeral = true,
-            priority = priority,
-            strict = false,
-          })
+          -- Highlight from block's highlight_indent to end of line
+          local start_byte =
+            virtcol_to_byte(line, block.highlight_indent, tabstop)
+          if #line > start_byte then
+            vim.api.nvim_buf_set_extmark(buf, ns, lnum, start_byte, {
+              end_col = #line,
+              hl_group = hl,
+              ephemeral = true,
+              priority = priority,
+              strict = false,
+            })
+          end
+
+          -- Padding highlight
+          local display_len = vim.fn.strdisplaywidth(line)
+          local virt_start = math.max(block.highlight_indent, display_len)
+          local padding_len = block.max_col - virt_start
+          local col = #line
+
+          set_virtual_highlight(
+            buf,
+            lnum,
+            col,
+            padding_len,
+            block.content_indent,
+            block.highlight_indent,
+            shiftwidth,
+            hl
+          )
         end
-
-        -- Padding highlight
-        local display_len = vim.fn.strdisplaywidth(line)
-        local virt_start = math.max(block.highlight_indent, display_len)
-        local padding_len = block.max_col - virt_start
-        local col = #line
-
-        set_virtual_highlight(
-          buf,
-          lnum,
-          col,
-          padding_len,
-          block.content_indent,
-          block.highlight_indent,
-          shiftwidth,
-          hl
-        )
       end
     end
   end)
@@ -205,7 +208,7 @@ local function get_indent_blocks(lines, tabstop)
       -- End blocks that are more indented than the current line.
       while #stack > 0 and indent < stack[#stack].content_indent do
         local block = table.remove(stack)
-        block.stop = last_lnum_with_text
+        block.stop = lnum
         block.max_col = block.max_col + 1 -- Add padding
         table.insert(result, block)
       end
