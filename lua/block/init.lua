@@ -1,27 +1,68 @@
+local config = require("block.config")
+local highlight = require("block.highlight")
+local renderer = require("block.renderer")
+
 local M = {}
 
-local core = require("block.block")
-local util = require("block.util")
+local did_setup = false
 
---- Setup the plugin
-function M.setup()
-  vim.api.nvim_create_augroup("block.nvim", { clear = true })
-
-  -- Hardcoded depth and colors for MVP
-
-  local colors = {
-    "#1a1a2e", -- Block0: deep navy
-    "#2f1a2e", -- Block1: deep burgundy
-    "#1a2e1a", -- Block2: dark forest green
-    "#2e261a", -- Block3: warm brown/bronze
-  }
-
-  for i, c in ipairs(colors) do
-    util.hl(i - 1, c)
+local function assert_setup()
+  if not did_setup then
+    error("block.nvim: call setup() first", 3)
   end
+end
 
-  vim.api.nvim_create_user_command("BlockOn", core.enable, {})
-  vim.api.nvim_create_user_command("BlockOff", core.disable, {})
+local function notify(enabled)
+  local state = enabled and "enabled" or "disabled"
+  vim.notify("block.nvim: " .. state .. " for current buffer")
+end
+
+---@param opts? Block.Config
+function M.setup(opts)
+  local resolved = config.resolve(opts)
+  highlight.setup(resolved)
+  renderer.setup(resolved)
+
+  vim.api.nvim_create_user_command("Block", function()
+    notify(renderer.toggle())
+  end, { desc = "Toggle block backgrounds in the current buffer", force = true })
+
+  vim.api.nvim_create_user_command("BlockOn", function()
+    renderer.enable()
+    notify(true)
+  end, { desc = "Enable block backgrounds in the current buffer", force = true })
+
+  vim.api.nvim_create_user_command("BlockOff", function()
+    renderer.disable()
+    notify(false)
+  end, { desc = "Disable block backgrounds in the current buffer", force = true })
+
+  did_setup = true
+end
+
+---@param buf? integer
+function M.enable(buf)
+  assert_setup()
+  renderer.enable(buf)
+end
+
+---@param buf? integer
+function M.disable(buf)
+  assert_setup()
+  renderer.disable(buf)
+end
+
+---@param buf? integer
+---@return boolean enabled
+function M.toggle(buf)
+  assert_setup()
+  return renderer.toggle(buf)
+end
+
+---@param buf? integer
+function M.refresh(buf)
+  assert_setup()
+  renderer.refresh(buf)
 end
 
 return M
