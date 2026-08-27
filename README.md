@@ -1,61 +1,66 @@
-# ❐block.nvim
-![Neovim](https://img.shields.io/badge/NeoVim-%2357A143.svg?&style=for-the-badge&logo=neovim&logoColor=white)
-![GitHub repo stars](https://img.shields.io/github/stars/HampusHauffman/block.nvim?style=flat&logo=github&logoColor=whitesmoke&label=Stars⭐️ )
+# block.nvim
 
-![image](https://user-images.githubusercontent.com/3845743/245099616-f6259c1d-3901-4860-8b4a-21e63f2f00db.png)
-Screenshot is taken on `Kitty` terminal with `font_family FiraCode Nerd Font` and `dracula` as colortheme.
-## ⚡️ Requirements
-Neovim Stable release and up (Have not tested how far back this works).
-## 🚀 Usage
-#### `:Block` Toggle current buffer
-#### `:BlockOn` On current buffer
-#### `:BlockOff` Off current buffer
+`block.nvim` gives nested code scopes distinct background colors. Every block
+starts at its header, includes its content and closing delimiter, and expands to
+the display width of everything nested inside it.
 
-## 📦 Installation
-### [lazy.nvim](https://github.com/folke/lazy.nvim)
+The analyzer is indentation-based rather than language-specific, so it works in
+normal buffers of any filetype without requiring a Tree-sitter parser. Tabs,
+Unicode display widths, blank lines, closing delimiters, and common branch
+continuations are handled.
+
+## Requirements
+
+- Neovim 0.12 or newer
+
+## Installation
+
 ```lua
 {
-    "HampusHauffman/block.nvim",
-    config = function()
-        require("block").setup({})
-    end
-},
+  "HampusHauffman/block.nvim",
+  opts = {},
+}
 ```
-## ⚙️ Configuration / Setup
-To change the defaults you can change any of the following values: 
+
+## Commands
+
+| Command | Action |
+| --- | --- |
+| `:Block` | Toggle the current buffer |
+| `:BlockOn` | Enable the current buffer |
+| `:BlockOff` | Disable the current buffer |
+
+## Configuration
+
 ```lua
----@field percent number  -- The change in color. 0.8 would change each box to be 20% darker than the last and 1.2 would be 20% brighter.
----@field depth number -- De depths of changing colors. Defaults to 4. After this the colors reset. Note that the first color is taken from your "Normal" highlight so a 4 is 3 new colors.
----@field automatic boolean -- Automatically turns this on when treesitter finds a parser for the current file.
----@field colors string [] | nil -- A list of colors to use instead. If this is set percent and depth are not taken into account.
----@field bg string? -- If you'd prefer to use a different color other than the default "Normal" highlight.
-
-    require("block").setup({
-        percent = 0.8,
-        depth = 4,
-        colors = nil,
-        automatic = false,
---      bg = nil,
---      colors = {
---          "#ff0000"
---          "#00ff00"
---          "#0000ff"
---      },
-    })
+require("block").setup({
+  automatic = true,
+  colors = nil,
+  levels = 4,
+  shade = 12,
+  padding = 1,
+  priority = 110,
+  debounce_ms = 20,
+  filter = function(buf)
+    return vim.bo[buf].buftype == ""
+  end,
+})
 ```
 
-## 🤔 Motivation
-This plugin is something i've wanted for a while but havent found any previous implementation of in neovim. 
-My hope is it will help with legibility in deeply nested code.
+When `colors` is unset, backgrounds are generated from the active colorscheme.
+The plugin regenerates them after `:colorscheme` changes. To use fixed colors:
 
-## 📝 Todo
-* Bug test and fix any community found issues
-* Add vim docs for usage
-* Handle multi character characters such as emojis
-* Potentially add virtual lines as a means to improve visibility even more
+```lua
+require("block").setup({
+  colors = {
+    "#1a1a2e",
+    "#2f1a2e",
+    "#1a2e1a",
+    "#2e261a",
+  },
+})
+```
 
-![image](https://user-images.githubusercontent.com/3845743/245100148-f392affa-4d5b-4c46-8bcb-56d9356a53e8.png)
-This is an example of manually set colors.
-
-### Contribution
-Currently development has been put on hold while i switch jobs. I'll still look at any PR's coming in. I know there is some performance issues that i intend to fix in the future but i do not have time ATM.
+Analysis is cached by buffer change tick and debounced while typing. The
+decoration provider creates only ephemeral highlights for lines Neovim is
+currently drawing.
